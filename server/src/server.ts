@@ -10,7 +10,7 @@ config();
 connectDB();
 
 const app: Application = express();
-const port = process.env.PORT || 3000;
+const port = process.env.PORT;
 
 // Middleware to parse JSON
 app.use(express.json());

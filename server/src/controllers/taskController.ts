@@ -10,6 +10,10 @@ export const getAllTasks = asyncHandler(async (req: Request, res: Response) => {
 
 // Create a new task
 export const createTask = asyncHandler(async (req: Request, res: Response) => {
+  const taskData = {
+    ...req.body,
+    userId: (req as any).user._id,
+  };
   const task = await Task.create(req.body);
   res.status(201).json(task);
 });

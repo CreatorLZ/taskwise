@@ -1,4 +1,4 @@
-import mongoose, { Document, Schema } from "mongoose";
+import mongoose, { Document, Schema, Types } from "mongoose";
 
 interface ITask extends Document {
   title: string;
@@ -7,6 +7,8 @@ interface ITask extends Document {
   priority: string; // "low", "medium", "high"
   dueDate: Date;
   status: string; // "pending", "in-progress", "completed"
+  reminderTime?: Date;
+  userId: Types.ObjectId;
 }
 
 const TaskSchema: Schema = new Schema({
@@ -25,6 +27,8 @@ const TaskSchema: Schema = new Schema({
     enum: ["pending", "in-progress", "completed"],
     default: "pending",
   },
+  reminderTime: { type: Date },
+  userId: { type: Types.ObjectId },
 });
 
 const Task = mongoose.model<ITask>("Task", TaskSchema);
