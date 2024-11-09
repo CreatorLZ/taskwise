@@ -9,6 +9,7 @@ interface IUser extends Document {
   failedLoginAttempts: number;
   isLocked: boolean;
   comparePassword(plainPassword: string): Promise<boolean>;
+  fcmToken?: string;
 }
 
 const UserSchema: Schema<IUser> = new Schema(
@@ -23,6 +24,7 @@ const UserSchema: Schema<IUser> = new Schema(
     password: { type: String, required: true },
     failedLoginAttempts: { type: Number, default: 0 },
     isLocked: { type: Boolean, default: false },
+    fcmToken: { type: String },
   },
   { timestamps: true }
 );

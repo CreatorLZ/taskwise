@@ -4,24 +4,39 @@ import Task from "../models/Task";
 import { sendPushNotification } from "../utils/notificationUtils";
 import User from "../models/User"; // Assuming each task has an associated user
 
-// Runs every minute; you can adjust the interval as needed
+// Runs every minute; adjust the interval as needed
 cron.schedule("* * * * *", async () => {
   console.log("Checking for tasks nearing reminder time...");
 
   const currentTime = new Date();
   const tenMinutesFromNow = new Date(currentTime.getTime() + 10 * 60000);
 
-  // Find tasks that have a reminder set within the next 10 minutes
-  const tasks = await Task.find({
-    reminderTime: { $lte: tenMinutesFromNow, $gt: currentTime },
-  });
+  try {
+    // Find tasks with reminders set within the next 10 minutes
+    const tasks = await Task.find({
+      reminderTime: { $lte: tenMinutesFromNow, $gt: currentTime },
+      completed: false,
+    });
 
-  tasks.forEach(async (task) => {
-    const user = await User.findById(task.userId); // Assuming each task has userId
+    for (const task of tasks) {
+      try {
+        // Fetch the associated user by userId
+        const user = await User.findById(task.userId);
 
-    if (user?.fcmToken) {
-      const message = `Reminder: ${task.title} is due soon!`;
-      await sendPushNotification(user.fcmToken, message);
+        if (user?.fcmToken) {
+          const message = `Reminder: ${task.title} is due soon!`;
+          await sendPushNotification(user.fcmToken, message);
+          console.log(
+            `Notification sent for task "${task.title}" to user ${user._id}`
+          );
+        } else {
+          console.warn(`No FCM token found for user ${user?._id}`);
+        }
+      } catch (error) {
+        console.error(`Error processing task ${task._id}:`, error);
+      }
     }
-  });
+  } catch (error) {
+    console.error("Error fetching tasks:", error);
+  }
 });
