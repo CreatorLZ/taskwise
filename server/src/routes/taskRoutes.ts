@@ -6,12 +6,15 @@ import {
   updateTask,
   deleteTask,
   markTaskAsCompleted,
+  getTasksByUserId,
 } from "../controllers/taskController"; // Import controller functions
 import { authenticateUser } from "../middleware/authMiddleware";
 
 const router = Router();
 
 // routes linked to controller methods
+
+router.get("/user/:userId", authenticateUser, getTasksByUserId);
 router.get("/", authenticateUser, getAllTasks); // GET /api/tasks - Get all tasks
 router.post("/", authenticateUser, createTask); // POST /api/tasks - Create a new task
 router.get("/:id", authenticateUser, getTaskById); //GET task by id

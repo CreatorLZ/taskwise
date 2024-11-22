@@ -1,4 +1,3 @@
-// src/firebaseConfig.ts
 import * as admin from "firebase-admin";
 import path from "path";
 
