@@ -3,6 +3,7 @@ import { config } from "dotenv";
 import taskRoutes from "./routes/taskRoutes";
 import authRoutes from "./routes/authRoutes";
 import nlpRoutes from "./routes/nlp";
+import prioritizeTasks from "./routes/prioritizeTasks";
 import connectDB from "./config/db";
 
 // Load environment variables
@@ -20,6 +21,7 @@ app.use(express.json());
 app.use("/api/tasks", taskRoutes);
 app.use("/api/auth", authRoutes);
 app.use("/api", nlpRoutes);
+app.use("/api", prioritizeTasks);
 
 // root route
 app.get("/", (req: Request, res: Response) => {
