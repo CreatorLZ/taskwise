@@ -52,7 +52,7 @@ Taskwise is a smart task management application that leverages AI to help users 
 
 ### 3. Create a .env file in the root directory and add the following variables:
 
-1. PORT=5000
+1. PORT=3000
 2. MONGODB_URI=your-mongodb-uri
 3. HUGGINGFACE_API_KEY=your-hugging-face-api-key
 4. FIREBASE_SERVER_KEY=your-firebase-server-key
