@@ -74,7 +74,7 @@ function Landing() {
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.5 }}
-                className="flex flex-col justify-center space-y-4"
+                className="flex flex-col justify-center space-y-4 pb-2 pt-2 md:pb-0 md:pt-0"
               >
                 <div className="space-y-2">
                   <motion.div
@@ -98,11 +98,11 @@ function Landing() {
                     your work while you focus on what matters most.
                   </p>
                 </div>
-                <div className="flex flex-col gap-2 min-[400px]:flex-row">
+                <div className="flex flex-row gap-2 min-[400px]:flex-row ">
                   <Link to="#">
-                    <Button size="lg" className="relative group">
+                    <Button size="lg" className="relative group w-36 ">
                       <div className="absolute -inset-0.5 bg-gradient-to-r from-purple-600 to-pink-600 rounded-lg blur opacity-30 group-hover:opacity-100 transition duration-1000 group-hover:duration-200" />
-                      <div className="relative bg-white dark:bg-gray-950 rounded-lg flex items-center px-8 text-black">
+                      <div className="relative bg-white dark:bg-gray-950 rounded-lg flex items-center justify-center px-8 text-black w-32">
                         Get Started
                         <ArrowRight className="ml-2 h-4 w-4" />
                       </div>
@@ -128,7 +128,7 @@ function Landing() {
               >
                 <div className="absolute -inset-1 bg-gradient-to-r from-purple-600 to-pink-600 rounded-xl blur opacity-25 group-hover:opacity-75 transition duration-1000 group-hover:duration-200" />
                 <div className="relative p-6 bg-white dark:bg-gray-900 rounded-xl border border-gray-200/50 dark:border-gray-800/50 backdrop-blur-sm">
-                  <div className="space-y-4">
+                  <div className="space-y-4 ">
                     <div className="flex items-center gap-2">
                       <Bot className="h-5 w-5 text-primary animate-pulse" />
                       <div className="text-sm font-medium">
