@@ -13,18 +13,37 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { Brain, Loader2 } from "lucide-react";
+import api from "@/utils/api";
 
 export default function LoginPage() {
   const [isLoading, setIsLoading] = useState(false);
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const navigate = useNavigate();
 
   const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     setIsLoading(true);
-    // Simulate API call
-    await new Promise((resolve) => setTimeout(resolve, 2000));
-    setIsLoading(false);
-    navigate("/");
+    setErrorMessage(null); // Clear any previous errors
+
+    try {
+      const response = await api.post("/auth/login", { email, password });
+      const { token } = response.data;
+
+      // Store the token (e.g., in localStorage)
+      localStorage.setItem("token", token);
+
+      // Navigate to the homepage
+      console.log(token);
+      navigate("/");
+    } catch (error: any) {
+      // Handle API errors
+      const errorResponse = error?.response?.data?.message || "Login failed";
+      setErrorMessage(errorResponse);
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   return (
@@ -48,12 +67,23 @@ export default function LoginPage() {
                 type="email"
                 placeholder="m@example.com"
                 required
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
               />
             </div>
             <div className="space-y-2">
               <Label htmlFor="password">Password</Label>
-              <Input id="password" type="password" required />
+              <Input
+                id="password"
+                type="password"
+                required
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+              />
             </div>
+            {errorMessage && (
+              <p className="text-red-500 text-sm">{errorMessage}</p>
+            )}
           </CardContent>
           <CardFooter className="flex flex-col space-y-4">
             <Button type="submit" className="w-full" disabled={isLoading}>

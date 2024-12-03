@@ -16,6 +16,10 @@
     transform: translate(0px, 0px) scale(1);
   }
 }
+.stick {
+  position: sticky !important;
+  top: 0 !important;
+}
 
 .animate-blob {
   animation: blob 7s infinite;

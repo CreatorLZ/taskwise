@@ -1,8 +1,10 @@
 import { Request, Response } from "express";
 import Task from "../models/Task";
 import asyncHandler from "express-async-handler";
+import { format, formatDistanceToNow } from "date-fns";
+import calculateTimeProgress from "../utils/calculateTimeProgress";
 
-// Get all tasks for a specific user
+// Get all tasks for a specific user with formatted dueTime
 export const getTasksByUserId = asyncHandler(
   async (req: Request, res: Response): Promise<void | any> => {
     const { userId } = req.params;
@@ -14,13 +16,31 @@ export const getTasksByUserId = asyncHandler(
     const tasks = await Task.find({ userId }).sort({
       priority: -1,
       dueDate: 1,
-    }); // Sort by priority (desc) and due date (asc)
+    });
 
     if (!tasks || tasks.length === 0) {
       return res.status(404).json({ message: "No tasks found for this user" });
     }
 
-    res.json(tasks);
+    const formattedTasks = tasks.map((task) => {
+      const createdAt = task.createdAt ?? new Date();
+      const progress = calculateTimeProgress(
+        createdAt.toISOString(), // Use createdAt as startDate
+        task.dueDate.toISOString()
+      );
+
+      return {
+        ...task.toObject(),
+        dueDate: format(new Date(task.dueDate), "yyyy-MM-dd"),
+        dueTime: formatDistanceToNow(new Date(task.dueDate), {
+          addSuffix: true,
+        }),
+        startDate: format(new Date(createdAt), "yyyy-MM-dd"),
+        progress,
+      };
+    });
+
+    res.json(formattedTasks);
   }
 );
 
@@ -29,15 +49,28 @@ export const getAllTasks = asyncHandler(async (req: Request, res: Response) => {
   const tasks = await Task.find().sort({ priority: -1, dueDate: 1 }); // -1 for descending priority, 1 for ascending dueDate
   res.json(tasks);
 });
-
-// Create a new task
+//create a new task
 export const createTask = asyncHandler(async (req: Request, res: Response) => {
   const taskData = {
     ...req.body,
     userId: (req as any).user.id,
   };
+
   const task = await Task.create(taskData);
-  res.status(201).json(task);
+  const createdAt = task.createdAt ?? new Date(); // Ensure `createdAt` is handled
+
+  res.status(201).json({
+    ...task.toObject(),
+    dueDate: format(new Date(task.dueDate), "yyyy-MM-dd"),
+    dueTime: formatDistanceToNow(new Date(task.dueDate), {
+      addSuffix: true,
+    }),
+    startDate: format(new Date(createdAt), "yyyy-MM-dd"),
+    progress: calculateTimeProgress(
+      createdAt.toISOString(),
+      task.dueDate.toISOString()
+    ),
+  });
 });
 
 // Get a specific task by ID

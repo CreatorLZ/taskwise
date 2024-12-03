@@ -42,7 +42,7 @@ export const analyzeAndPrioritizeTasks = async (userId: string) => {
         Current Priority: ${priority}
         Due Date: ${dueDate.toISOString()}
         Guidelines:
-        - Recommend "low", "medium", or "high" for priority.
+        - Recommend "low", "medium", "completed" or "high" for priority.
         - Adjust task status based on due date and urgency.
         - Provide a reason for any suggested changes.
         - Use ${currentDate.toISOString()} as the reference date.
@@ -56,10 +56,10 @@ export const analyzeAndPrioritizeTasks = async (userId: string) => {
           {
             role: "system",
             content: `
-              You are an advanced task analyzer. Given task details, recommend changes to priority/status with explanations.
+              You are an advanced task analyzer. Given task details, recommend changes to priority/status with explanations.make sure to always change priority to completed if status shows completed
               Always respond with valid JSON in this schema:
               {
-                "newPriority": "low" | "medium" | "high",
+                "newPriority": "low" | "medium" | "high" | "completed",
                 "newStatus": "pending" | "in-progress" | "completed",
                 "reason": "string"
               }

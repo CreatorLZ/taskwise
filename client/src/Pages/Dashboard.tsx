@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -30,11 +30,84 @@ import {
 } from "lucide-react";
 import { NewTaskModal } from "@/components/ui/newTask";
 import { TaskCard } from "@/components/taskCard";
-
+import api from "@/utils/api";
+import { jwtDecode } from "jwt-decode";
 // import { ThemeToggle } from "@/components/theme-toggle"
 
 export default function TaskDashboard() {
   const [prioritizationEnabled, setPrioritizationEnabled] = useState(false);
+  const [filteredTasks, setFilteredTasks] = useState([]);
+  const [tasks, setTasks] = useState<Task[]>([]);
+  const [isLoading, setIsLoading] = useState(false);
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
+
+  interface JwtPayload {
+    id: string;
+    email: string;
+    name: string;
+  }
+
+  interface Task {
+    id: string;
+    title: string;
+    category: string;
+    priority: string;
+    progress: number;
+    dueTime: string;
+    dueDate: string;
+    description: string;
+    status: string;
+    completed?: boolean;
+  }
+
+  // Decode the token and retrieve the user ID
+  const getUserIdFromToken = (): string | null => {
+    const token = localStorage.getItem("token");
+    if (!token) return null;
+
+    try {
+      const decoded = jwtDecode<JwtPayload>(token);
+      return decoded.id;
+    } catch (error) {
+      console.error("Failed to decode token:", error);
+      return null;
+    }
+  };
+
+  const fetchTasksForUser = async (userId: string) => {
+    setIsLoading(true);
+    setErrorMessage(null);
+
+    try {
+      // Fetch tasks for the user
+      const response = await api.get(`/tasks/user/${userId}`);
+      console.log("Fetched tasks:", response.data);
+
+      // Update the tasks state
+      if (Array.isArray(response.data)) {
+        setTasks(response.data);
+      } else {
+        throw new Error("Unexpected response format");
+      }
+    } catch (error: any) {
+      console.error("Error fetching tasks:", error);
+      setErrorMessage(
+        error.response?.data?.message ||
+          "Failed to load tasks. Please try again."
+      );
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    const userId = getUserIdFromToken();
+    if (userId) {
+      fetchTasksForUser(userId);
+    } else {
+      setErrorMessage("User not authenticated");
+    }
+  }, []);
 
   return (
     <div className="min-h-screen bg-background text-foreground">
@@ -189,6 +262,57 @@ export default function TaskDashboard() {
                       dueDate="2023-07-13"
                     />
                   </TabsContent>
+
+                  <TabsContent value="in-progress" className="space-y-4">
+                    {tasks
+                      .filter(
+                        (task) =>
+                          !task.completed &&
+                          ["pending", "in-progress"].includes(task.status)
+                      )
+                      .map((task) => (
+                        <TaskCard
+                          key={task.id}
+                          id={task.id}
+                          title={task.title}
+                          category={"Update on backend"}
+                          priority={task.priority}
+                          progress={task.progress}
+                          dueTime={task.dueTime}
+                          completed={task.completed}
+                          dueDate={task.dueDate}
+                          aiPrioritized={prioritizationEnabled}
+                          description={task.description}
+                        />
+                      ))}
+                  </TabsContent>
+                  <TabsContent value="completed" className="space-y-4">
+                    {tasks
+                      .filter(
+                        (task) => task.status == "completed" || task.completed
+                      )
+                      .map((task) => (
+                        <TaskCard
+                          key={task.id}
+                          id={task.id}
+                          title={task.title}
+                          category={task.category}
+                          priority={task.priority}
+                          progress={task.progress}
+                          dueTime={task.dueTime}
+                          dueDate={task.dueDate}
+                          completed
+                          aiPrioritized={prioritizationEnabled}
+                          description={task.description}
+                        />
+                      ))}
+                    {tasks.filter((task) => task.status == "completed")
+                      .length === 0 && (
+                      <p className="text-muted-foreground">
+                        No completed tasks.
+                      </p>
+                    )}
+                  </TabsContent>
                 </Tabs>
               </CardContent>
             </Card>
@@ -244,75 +368,6 @@ export default function TaskDashboard() {
     </div>
   );
 }
-
-// function TaskCard({
-//   title,
-//   category,
-//   priority,
-//   progress,
-//   dueTime,
-//   completed = false,
-//   aiPrioritized = false,
-// }: {
-//   title: string;
-//   category: string;
-//   priority: string;
-//   progress: number;
-//   dueTime: string;
-//   completed?: boolean;
-//   aiPrioritized?: boolean;
-// }) {
-//   return (
-//     <div className="p-4 rounded-lg border bg-card hover:bg-accent/50 transition-colors">
-//       <div className="flex justify-between items-start mb-3">
-//         <div className="flex items-start gap-3">
-//           {completed ? (
-//             <CheckCircle2 className="w-4 h-4 text-green-500 mt-1" />
-//           ) : (
-//             <Circle className="w-4 h-4 text-blue-500 mt-1" />
-//           )}
-//           <div>
-//             <h3 className="font-medium flex items-center gap-2">
-//               {title}
-//               {aiPrioritized && !completed && (
-//                 <Sparkles className="w-3 h-3 text-primary" />
-//               )}
-//             </h3>
-//             <p className="text-sm text-muted-foreground">{category}</p>
-//           </div>
-//         </div>
-//         <span
-//           className={`text-xs px-2 py-1 rounded-full ${
-//             priority === "High"
-//               ? "bg-red-500/20 text-red-500"
-//               : priority === "Medium"
-//               ? "bg-yellow-500/20 text-yellow-500"
-//               : priority === "Completed"
-//               ? "bg-green-500/20 text-green-500"
-//               : "bg-blue-500/20 text-blue-500"
-//           }`}
-//         >
-//           {priority}
-//         </span>
-//       </div>
-//       <div className="space-y-3">
-//         <div className="space-y-1">
-//           <div className="flex justify-between text-sm text-muted-foreground">
-//             <span>Progress</span>
-//             <span>{progress}%</span>
-//           </div>
-//           <Progress value={progress} />
-//         </div>
-//         <div className="flex justify-between items-center text-sm">
-//           <span className="text-muted-foreground">Due {dueTime}</span>
-//           <Button variant="ghost" size="sm">
-//             View Details
-//           </Button>
-//         </div>
-//       </div>
-//     </div>
-//   );
-// }
 
 function StatCard({
   icon,

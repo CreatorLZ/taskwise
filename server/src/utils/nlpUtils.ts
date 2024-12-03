@@ -26,7 +26,7 @@ export const createTaskFromNLP = async (command: string, userId: string) => {
             "title": "string",
             "description": "string",
             "completed": false,
-            "priority": "low" | "medium" | "high",
+            "priority": "low" | "medium" | "high" | "completed"
             "dueDate": "ISO date string",
             "status": "pending" | "in-progress" | "completed",
             "reminderTime": "ISO date string (optional)",

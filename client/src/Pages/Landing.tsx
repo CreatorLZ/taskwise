@@ -20,6 +20,7 @@ import {
 
 import { Button } from "../components/ui/button";
 // import {Button} from "@/components/ui/button";
+import "../global.css";
 
 function Landing() {
   return (
@@ -27,7 +28,7 @@ function Landing() {
       {/* Background grid pattern */}
       <div className="absolute inset-0 bg-[linear-gradient(to_right,#8080800a_1px,transparent_1px),linear-gradient(to_bottom,#8080800a_1px,transparent_1px)] bg-[size:14px_24px] [mask-image:radial-gradient(ellipse_60%_50%_at_50%_0%,#000_70%,transparent_100%)]" />
 
-      <header className="sticky top-0 px-4 lg:px-6 h-14 flex items-center backdrop-blur-md border-b border-gray-200/30 dark:border-gray-800/30 z-50">
+      <header className="px-4 lg:px-6 h-14 flex items-center backdrop-blur-md border-b border-gray-200/30 dark:border-gray-800/30 z-50 stick">
         <Link to="#" className="flex items-center justify-center">
           <Brain className="h-6 w-6 text-primary" />
           <span className="ml-2 text-lg font-bold bg-clip-text text-transparent bg-gradient-to-r from-gray-900 to-gray-600 dark:from-gray-100 dark:to-gray-400">
@@ -99,7 +100,7 @@ function Landing() {
                   </p>
                 </div>
                 <div className="flex flex-row gap-2 min-[400px]:flex-row ">
-                  <Link to="#">
+                  <Link to="/register">
                     <Button size="lg" className="relative group w-36 ">
                       <div className="absolute -inset-0.5 bg-gradient-to-r from-purple-600 to-pink-600 rounded-lg blur opacity-30 group-hover:opacity-100 transition duration-1000 group-hover:duration-200" />
                       <div className="relative bg-white dark:bg-gray-950 rounded-lg flex items-center justify-center px-8 text-black w-32">
@@ -281,7 +282,7 @@ function Landing() {
                 </p>
               </div>
               <div className="flex flex-col gap-2 min-[400px]:flex-row">
-                <Link to="#">
+                <Link to="/register">
                   <Button size="lg" className="relative group">
                     <div className="absolute -inset-0.5 bg-gradient-to-r from-purple-600 to-pink-600 rounded-lg blur opacity-30 group-hover:opacity-100 transition duration-1000 group-hover:duration-200" />
                     <div className="relative bg-white dark:bg-gray-950 rounded-lg flex items-center px-8 text-black">

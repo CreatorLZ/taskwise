@@ -37,7 +37,7 @@ export const login = async (
     }
 
     const token = generateToken(user._id.toString());
-    res.json({ token, userId: user._id.toString() });
+    res.json({ token, userId: user._id.toString(), user });
   } catch (error) {
     res.status(500).json({ message: "Error logging in", error });
   }

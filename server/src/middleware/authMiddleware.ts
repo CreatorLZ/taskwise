@@ -16,7 +16,14 @@ export const authenticateUser = async (
     const decoded = verifyToken(token) as JwtPayload;
     const userId = decoded.id as string;
     const user = await User.findById(userId);
-    (req as any).user = decoded;
+    // (req as any).user = decoded;
+
+    // Attach user details to the request object
+    (req as any).user = {
+      id: userId,
+      email: user?.email,
+      name: user?.username,
+    };
     next();
   } catch (error) {
     res.status(401).json({ message: "Token is not valid" });
