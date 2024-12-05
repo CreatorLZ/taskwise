@@ -57,11 +57,11 @@ export const TaskCard: React.FC<TaskCardProps> = ({
           </div>
           <span
             className={`text-xs px-2 py-1 rounded-full ${
-              priority === "high"
+              priority.toLowerCase() === "high"
                 ? "bg-red-500/20 text-red-500"
-                : priority === "medium"
+                : priority.toLowerCase() === "medium"
                 ? "bg-yellow-500/20 text-yellow-500"
-                : priority === "completed"
+                : priority.toLowerCase() === "completed"
                 ? "bg-green-500/20 text-green-500"
                 : "bg-blue-500/20 text-blue-500"
             }`}

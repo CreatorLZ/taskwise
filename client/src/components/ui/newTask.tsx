@@ -1,4 +1,5 @@
 import { useState } from "react";
+import api from "@/utils/api"; // Import the API utility
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -39,18 +40,65 @@ import {
 export function NewTaskModal() {
   const [isNlpMode, setIsNlpMode] = useState(false);
   const [nlpInput, setNlpInput] = useState("");
-  const [isProcessing, setIsProcessing] = useState(false);
+  const [taskName, setTaskName] = useState("");
+  const [description, setDescription] = useState("");
+  const [priority, setPriority] = useState<string>("");
   const [date, setDate] = useState<Date>();
+  const [isProcessing, setIsProcessing] = useState(false);
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
   const handleNlpSubmit = async () => {
     setIsProcessing(true);
-    // Simulating NLP processing delay
-    await new Promise((resolve) => setTimeout(resolve, 2000));
-    setIsProcessing(false);
-    // Here you would typically send the nlpInput to your backend for processing
-    console.log("NLP input processed:", nlpInput);
-    // Reset the input
-    setNlpInput("");
+    setErrorMessage(null);
+
+    try {
+      const response = await api.post("/create-from-nlp", {
+        command: nlpInput,
+      });
+      console.log("NLP Task created:", response.data);
+      // Reset the input and close the dialog
+      setNlpInput("");
+    } catch (error: any) {
+      const errorResponse =
+        error?.response?.data?.message || "Failed to create task using AI.";
+      setErrorMessage(errorResponse);
+    } finally {
+      setIsProcessing(false);
+    }
+  };
+
+  const handleManualSubmit = async () => {
+    setIsProcessing(true);
+    setErrorMessage(null);
+
+    try {
+      const response = await api.post("/tasks", {
+        title: taskName,
+        description,
+        priority,
+        dueDate: date?.toISOString(),
+      });
+      console.log("Manual Task created:", response.data);
+      // Reset the inputs and close the dialog
+      setTaskName("");
+      setDescription("");
+      setPriority("");
+      setDate(undefined);
+    } catch (error: any) {
+      const errorResponse =
+        error?.response?.data?.message || "Failed to create task.";
+      setErrorMessage(errorResponse);
+    } finally {
+      setIsProcessing(false);
+    }
+  };
+
+  const handleSubmit = async () => {
+    if (isNlpMode) {
+      await handleNlpSubmit();
+    } else {
+      await handleManualSubmit();
+    }
   };
 
   return (
@@ -88,11 +136,14 @@ export function NewTaskModal() {
               <Label htmlFor="nlp-input">Describe your task</Label>
               <Textarea
                 id="nlp-input"
-                placeholder="E.g., Schedule a team meeting for next Tuesday at 2 PM to discuss the new project proposal"
+                placeholder="E.g., Schedule a meeting for Monday at 10 AM"
                 value={nlpInput}
                 onChange={(e) => setNlpInput(e.target.value)}
               />
-              <Button onClick={handleNlpSubmit} disabled={isProcessing}>
+              {errorMessage && (
+                <p className="text-red-500 text-sm">{errorMessage}</p>
+              )}
+              <Button onClick={handleSubmit} disabled={isProcessing}>
                 {isProcessing ? (
                   <>
                     <Loader2 className="mr-2 h-4 w-4 animate-spin" />
@@ -110,25 +161,32 @@ export function NewTaskModal() {
             <>
               <div className="grid gap-2">
                 <Label htmlFor="task-name">Task name</Label>
-                <Input id="task-name" placeholder="Enter task name" />
+                <Input
+                  id="task-name"
+                  placeholder="Enter task name"
+                  value={taskName}
+                  onChange={(e) => setTaskName(e.target.value)}
+                />
               </div>
               <div className="grid gap-2">
                 <Label htmlFor="task-description">Description</Label>
                 <Textarea
                   id="task-description"
                   placeholder="Enter task description"
+                  value={description}
+                  onChange={(e) => setDescription(e.target.value)}
                 />
               </div>
               <div className="grid gap-2">
                 <Label htmlFor="task-priority">Priority</Label>
-                <Select>
+                <Select value={priority} onValueChange={setPriority}>
                   <SelectTrigger id="task-priority">
                     <SelectValue placeholder="Select priority" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="low">Low</SelectItem>
-                    <SelectItem value="medium">Medium</SelectItem>
-                    <SelectItem value="high">High</SelectItem>
+                    <SelectItem value="Low">Low</SelectItem>
+                    <SelectItem value="Medium">Medium</SelectItem>
+                    <SelectItem value="High">High</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
@@ -157,12 +215,27 @@ export function NewTaskModal() {
                   </PopoverContent>
                 </Popover>
               </div>
+              {errorMessage && (
+                <p className="text-red-500 text-sm">{errorMessage}</p>
+              )}
+              <Button onClick={handleSubmit} disabled={isProcessing}>
+                {isProcessing ? (
+                  <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    Creating Task...
+                  </>
+                ) : (
+                  "Create Task"
+                )}
+              </Button>
             </>
           )}
         </div>
-        <DialogFooter>
-          <Button type="submit">Create Task</Button>
-        </DialogFooter>
+        {/* <DialogFooter>
+          <Button type="submit" onClick={handleSubmit} disabled={isProcessing}>
+            {isProcessing ? "Processing..." : "Create Task"}
+          </Button>
+        </DialogFooter> */}
       </DialogContent>
     </Dialog>
   );

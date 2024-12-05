@@ -24,11 +24,11 @@ import "../global.css";
 
 function Landing() {
   return (
-    <div className="flex min-h-screen flex-col bg-gradient-to-b from-white to-gray-50 dark:from-gray-950 dark:to-gray-900 overflow-x-hidden">
+    <div className="flex min-h-screen flex-col bg-gradient-to-b from-white to-gray-50 dark:from-gray-950 dark:to-gray-900 ">
       {/* Background grid pattern */}
       <div className="absolute inset-0 bg-[linear-gradient(to_right,#8080800a_1px,transparent_1px),linear-gradient(to_bottom,#8080800a_1px,transparent_1px)] bg-[size:14px_24px] [mask-image:radial-gradient(ellipse_60%_50%_at_50%_0%,#000_70%,transparent_100%)]" />
 
-      <header className="px-4 lg:px-6 h-14 flex items-center backdrop-blur-md border-b border-gray-200/30 dark:border-gray-800/30 z-50 stick">
+      <header className="px-4 lg:px-6 h-14 flex items-center backdrop-blur-md border-b border-gray-200/30 dark:border-gray-800/30 z-50 sticky top-0">
         <Link to="#" className="flex items-center justify-center">
           <Brain className="h-6 w-6 text-primary" />
           <span className="ml-2 text-lg font-bold bg-clip-text text-transparent bg-gradient-to-r from-gray-900 to-gray-600 dark:from-gray-100 dark:to-gray-400">
@@ -62,7 +62,7 @@ function Landing() {
           </Link>
         </nav>
       </header>
-      <main className="flex-1 relative">
+      <main className="flex-1 relative max-w-screen overflow-hidden">
         {/* Animated background gradients */}
         <div className="absolute top-0 -left-4 w-72 h-72 bg-purple-300 rounded-full mix-blend-multiply filter blur-xl opacity-20 animate-blob dark:opacity-10" />
         <div className="absolute top-0 -right-4 w-72 h-72 bg-yellow-300 rounded-full mix-blend-multiply filter blur-xl opacity-20 animate-blob animation-delay-2000 dark:opacity-10" />

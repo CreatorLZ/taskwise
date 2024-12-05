@@ -27,12 +27,12 @@ interface ITask extends Document {
 const PriorityLogSchema: Schema = new Schema({
   oldPriority: {
     type: String,
-    enum: ["low", "medium", "high"],
+    enum: ["Low", "Medium", "High"],
     required: true,
   },
   newPriority: {
     type: String,
-    enum: ["low", "medium", "high"],
+    enum: ["Low", "Medium", "High"],
     required: true,
   },
   reason: { type: String, required: true },
@@ -47,16 +47,16 @@ const TaskSchema: Schema = new Schema(
     completed: { type: Boolean, default: false },
     priority: {
       type: String,
-      enum: ["low", "medium", "high", "completed"],
-      default: "medium",
+      enum: ["Low", "Medium", "High", "Completed"],
+      default: "Medium",
       required: true,
     },
     dueDate: { type: Date, required: true },
     dueTime: { type: Date },
     status: {
       type: String,
-      enum: ["pending", "in-progress", "completed"],
-      default: "pending",
+      enum: ["Pending", "In-progress", "Completed"],
+      default: "Pending",
     },
     reminderTime: { type: Date },
     userId: { type: Types.ObjectId, required: true },

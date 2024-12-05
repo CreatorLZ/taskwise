@@ -59,8 +59,8 @@ export const analyzeAndPrioritizeTasks = async (userId: string) => {
               You are an advanced task analyzer. Given task details, recommend changes to priority/status with explanations.make sure to always change priority to completed if status shows completed
               Always respond with valid JSON in this schema:
               {
-                "newPriority": "low" | "medium" | "high" | "completed",
-                "newStatus": "pending" | "in-progress" | "completed",
+                "newPriority": "Low" | "Medium" | "High" | "Completed",
+                "newStatus": "Pending" | "In-progress" | "Completed",
                 "reason": "string"
               }
               Do not include additional headings or explanations outside of JSON.

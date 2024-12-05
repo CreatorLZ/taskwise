@@ -36,7 +36,9 @@ import { jwtDecode } from "jwt-decode";
 
 export default function TaskDashboard() {
   const [prioritizationEnabled, setPrioritizationEnabled] = useState(false);
-  const [filteredTasks, setFilteredTasks] = useState([]);
+  const [taskFilter, setTaskFilter] = useState<"all" | "today" | "upcoming">(
+    "all"
+  );
   const [tasks, setTasks] = useState<Task[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
@@ -72,6 +74,31 @@ export default function TaskDashboard() {
       console.error("Failed to decode token:", error);
       return null;
     }
+  };
+
+  const filterTasks = (tasks: Task[], completed: boolean = false) => {
+    // Get today's date in YYYY-MM-DD format
+    const today = new Date().toISOString().split("T")[0];
+
+    return tasks.filter((task) => {
+      // First, check completion status
+      const isCompletedMatch = completed
+        ? ["completed", "Completed"].includes(task.status) || task.completed
+        : !task.completed &&
+          ["Pending", "In-progress", "pending", "in-progress"].includes(
+            task.status
+          );
+
+      // Then apply time-based filtering
+      switch (taskFilter) {
+        case "today":
+          return isCompletedMatch && task.dueDate === today;
+        case "upcoming":
+          return isCompletedMatch && new Date(task.dueDate) > new Date(today);
+        default: // 'all' case
+          return isCompletedMatch;
+      }
+    });
   };
 
   const fetchTasksForUser = async (userId: string) => {
@@ -195,7 +222,13 @@ export default function TaskDashboard() {
               <CardHeader>
                 <div className="flex justify-between items-center">
                   <CardTitle>Tasks Overview</CardTitle>
-                  <Select defaultValue="all">
+                  <Select
+                    defaultValue="all"
+                    value={taskFilter}
+                    onValueChange={(value: "all" | "today" | "upcoming") =>
+                      setTaskFilter(value)
+                    }
+                  >
                     <SelectTrigger className="w-32">
                       <SelectValue />
                     </SelectTrigger>
@@ -213,7 +246,9 @@ export default function TaskDashboard() {
                     <TabsTrigger value="in-progress">In Progress</TabsTrigger>
                     <TabsTrigger value="completed">Completed</TabsTrigger>
                   </TabsList>
-                  <TabsContent value="in-progress" className="space-y-4">
+
+                  {/* ideal test taskcard template */}
+                  {/* <TabsContent value="in-progress" className="space-y-4">
                     <TaskCard
                       id="1"
                       title="Update Design System"
@@ -225,91 +260,47 @@ export default function TaskDashboard() {
                       description="Revise and update the company's design system to ensure consistency across all products."
                       dueDate="2023-07-15"
                     />
-                    <TaskCard
-                      id="2"
-                      title="Client Meeting Preparation"
-                      category="Planning"
-                      priority="Medium"
-                      progress={30}
-                      dueTime="5 hours"
-                      aiPrioritized={prioritizationEnabled}
-                      description="Prepare presentation and talking points for the upcoming client meeting."
-                      dueDate="2023-07-14"
-                    />
-                    <TaskCard
-                      id="3"
-                      title="Code Review"
-                      category="Development"
-                      priority="Low"
-                      progress={10}
-                      dueTime="Tomorrow"
-                      aiPrioritized={prioritizationEnabled}
-                      description="Review and provide feedback on the latest pull requests from the development team."
-                      dueDate="2023-07-16"
-                    />
-                  </TabsContent>
-                  <TabsContent value="completed" className="space-y-4">
-                    <TaskCard
-                      id="4"
-                      title="API Documentation"
-                      category="Development"
-                      priority="Completed"
-                      progress={100}
-                      dueTime="Yesterday"
-                      completed
-                      aiPrioritized={prioritizationEnabled}
-                      description="Write comprehensive documentation for the new API endpoints."
-                      dueDate="2023-07-13"
-                    />
-                  </TabsContent>
+                  </TabsContent> */}
 
                   <TabsContent value="in-progress" className="space-y-4">
-                    {tasks
-                      .filter(
-                        (task) =>
-                          !task.completed &&
-                          ["pending", "in-progress"].includes(task.status)
-                      )
-                      .map((task) => (
-                        <TaskCard
-                          key={task.id}
-                          id={task.id}
-                          title={task.title}
-                          category={"Update on backend"}
-                          priority={task.priority}
-                          progress={task.progress}
-                          dueTime={task.dueTime}
-                          completed={task.completed}
-                          dueDate={task.dueDate}
-                          aiPrioritized={prioritizationEnabled}
-                          description={task.description}
-                        />
-                      ))}
+                    {filterTasks(tasks).map((task) => (
+                      <TaskCard
+                        key={task.id}
+                        id={task.id}
+                        title={task.title}
+                        category={task.category}
+                        priority={task.priority}
+                        progress={task.progress}
+                        dueTime={task.dueTime}
+                        completed={task.completed}
+                        dueDate={task.dueDate}
+                        aiPrioritized={prioritizationEnabled}
+                        description={task.description}
+                      />
+                    ))}
+                    {filterTasks(tasks).length === 0 && (
+                      <p className="text-muted-foreground">No tasks found.</p>
+                    )}
                   </TabsContent>
                   <TabsContent value="completed" className="space-y-4">
-                    {tasks
-                      .filter(
-                        (task) => task.status == "completed" || task.completed
-                      )
-                      .map((task) => (
-                        <TaskCard
-                          key={task.id}
-                          id={task.id}
-                          title={task.title}
-                          category={task.category}
-                          priority={task.priority}
-                          progress={task.progress}
-                          dueTime={task.dueTime}
-                          dueDate={task.dueDate}
-                          completed
-                          aiPrioritized={prioritizationEnabled}
-                          description={task.description}
-                        />
-                      ))}
-                    {tasks.filter((task) => task.status == "completed")
-                      .length === 0 && (
+                    {filterTasks(tasks, true).map((task) => (
+                      <TaskCard
+                        key={task.id}
+                        id={task.id}
+                        title={task.title}
+                        category={task.category}
+                        priority={task.priority}
+                        progress={task.progress}
+                        dueTime={task.dueTime}
+                        dueDate={task.dueDate}
+                        completed
+                        aiPrioritized={prioritizationEnabled}
+                        description={task.description}
+                      />
+                    ))}
+                    {filterTasks(tasks, true).length === 0 && (
                       <p className="text-muted-foreground">
-                        No completed tasks.
+                        No completed tasks found.
                       </p>
                     )}
                   </TabsContent>

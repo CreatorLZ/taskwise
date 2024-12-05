@@ -26,15 +26,15 @@ export const createTaskFromNLP = async (command: string, userId: string) => {
             "title": "string",
             "description": "string",
             "completed": false,
-            "priority": "low" | "medium" | "high" | "completed"
+            "priority": "Low" | "Medium" | "High" | "Completed"
             "dueDate": "ISO date string",
-            "status": "pending" | "in-progress" | "completed",
+            "status": "Pending" | "In-progress" | "Completed",
             "reminderTime": "ISO date string (optional)",
             "userId": "${userId}"
           }
           Ensure:
-          - Default priority: "medium".
-          - Default status: "pending".
+          - Default priority: "Medium".
+          - Default status: "Pending".
           - Reminder: 24 hours before the due date if unspecified.
           - Parse dueDate from natural language.
           - Always return valid JSON without enclosing it in unnecessary block markers like \`\`\`json.
