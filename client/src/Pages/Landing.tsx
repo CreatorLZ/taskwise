@@ -28,7 +28,7 @@ function Landing() {
       {/* Background grid pattern */}
       <div className="absolute inset-0 bg-[linear-gradient(to_right,#8080800a_1px,transparent_1px),linear-gradient(to_bottom,#8080800a_1px,transparent_1px)] bg-[size:14px_24px] [mask-image:radial-gradient(ellipse_60%_50%_at_50%_0%,#000_70%,transparent_100%)]" />
 
-      <header className="px-4 lg:px-6 h-14 flex items-center backdrop-blur-md border-b border-gray-200/30 dark:border-gray-800/30 z-50 sticky top-0">
+      <header className="px-4 lg:px-6 h-14 flex items-center backdrop-blur-3xl border-b border-gray-200/30 dark:border-gray-800/30 z-50 sticky top-0">
         <Link to="#" className="flex items-center justify-center">
           <Brain className="h-6 w-6 text-primary" />
           <span className="ml-2 text-lg font-bold bg-clip-text text-transparent bg-gradient-to-r from-gray-900 to-gray-600 dark:from-gray-100 dark:to-gray-400">
