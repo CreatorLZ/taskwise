@@ -231,11 +231,9 @@ export function NewTaskModal() {
             </>
           )}
         </div>
-        {/* <DialogFooter>
-          <Button type="submit" onClick={handleSubmit} disabled={isProcessing}>
-            {isProcessing ? "Processing..." : "Create Task"}
-          </Button>
-        </DialogFooter> */}
+        <DialogFooter className="text-muted-foreground flex justify-center w-full text-center ">
+          {isProcessing ? "Task creation usually takes seconds..." : ""}
+        </DialogFooter>
       </DialogContent>
     </Dialog>
   );

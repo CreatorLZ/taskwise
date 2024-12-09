@@ -248,7 +248,7 @@ export default function TaskDashboard() {
                   </TabsList>
 
                   {/* ideal test taskcard template */}
-                  {/* <TabsContent value="in-progress" className="space-y-4">
+                  <TabsContent value="in-progress" className="space-y-4">
                     <TaskCard
                       id="1"
                       title="Update Design System"
@@ -260,7 +260,7 @@ export default function TaskDashboard() {
                       description="Revise and update the company's design system to ensure consistency across all products."
                       dueDate="2023-07-15"
                     />
-                  </TabsContent> */}
+                  </TabsContent>
 
                   <TabsContent value="in-progress" className="space-y-4">
                     {filterTasks(tasks).map((task) => (

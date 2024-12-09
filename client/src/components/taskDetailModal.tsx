@@ -167,8 +167,8 @@ export function TaskDetailModal({
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="sm:max-w-[425px]">
-        <DialogHeader>
+      <DialogContent className="sm:max-w-[425px] overflow-scroll pt-10 ">
+        <DialogHeader className="">
           <DialogTitle className="flex items-center gap-2">
             {isEditing ? (
               <Input
@@ -187,7 +187,7 @@ export function TaskDetailModal({
               </>
             )}
           </DialogTitle>
-          <DialogDescription>
+          <DialogDescription className="flex justify-start">
             {isEditing ? (
               <Input
                 value={editedTask.category}
@@ -310,7 +310,7 @@ export function TaskDetailModal({
           )}
         </div>
         {/* Footer Buttons */}
-        <DialogFooter className="sm:justify-between">
+        <DialogFooter className="sm:justify-between flex-row justify-between">
           <div>
             {isEditing ? (
               <>
