@@ -31,8 +31,9 @@ import {
 import { NewTaskModal } from "@/components/ui/newTask";
 import { TaskCard } from "@/components/taskCard";
 import api from "@/utils/api";
-import { jwtDecode } from "jwt-decode";
+
 import useAuthStore from "@/store/authstore";
+import useTaskStore from "@/store/taskStore";
 // import { ThemeToggle } from "@/components/theme-toggle"
 
 export default function TaskDashboard() {
@@ -40,18 +41,14 @@ export default function TaskDashboard() {
   const [taskFilter, setTaskFilter] = useState<"all" | "today" | "upcoming">(
     "all"
   );
-  const [tasks, setTasks] = useState<Task[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const user = useAuthStore((state) => state.user);
+  const tasks = useTaskStore((state) => state.tasks);
+  const setTasks = useTaskStore((state) => state.setTasks);
+  const userId = useAuthStore((state) => state.userId);
 
   console.log(user);
-
-  interface JwtPayload {
-    id: string;
-    email: string;
-    name: string;
-  }
 
   interface Task {
     _id: string;
@@ -65,20 +62,6 @@ export default function TaskDashboard() {
     status: string;
     completed?: boolean;
   }
-
-  // Decode the token and retrieve the user ID
-  const getUserIdFromToken = (): string | null => {
-    const token = localStorage.getItem("token");
-    if (!token) return null;
-
-    try {
-      const decoded = jwtDecode<JwtPayload>(token);
-      return decoded.id;
-    } catch (error) {
-      console.error("Failed to decode token:", error);
-      return null;
-    }
-  };
 
   const filterTasks = (tasks: Task[], completed: boolean = false) => {
     // Get today's date in YYYY-MM-DD format
@@ -134,7 +117,6 @@ export default function TaskDashboard() {
   };
 
   useEffect(() => {
-    const userId = getUserIdFromToken();
     if (userId) {
       fetchTasksForUser(userId);
     } else {

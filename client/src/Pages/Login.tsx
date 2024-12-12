@@ -42,11 +42,10 @@ export default function LoginPage() {
       setUserId(userId);
 
       // console.log(user);
-      // console.log(token);
+      console.log(`token: ${token}`);
       // console.log(userId);
 
       // Navigate to the homepage
-      console.log(token);
       navigate("/");
     } catch (error: any) {
       // Handle API errors
