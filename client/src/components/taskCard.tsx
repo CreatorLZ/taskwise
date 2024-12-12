@@ -6,7 +6,7 @@ import { CheckCircle2, Circle, Sparkles } from "lucide-react";
 
 // Define the types for the component props
 interface TaskCardProps {
-  id: string;
+  _id: string;
   title: string;
   category: string;
   priority: string;
@@ -19,7 +19,7 @@ interface TaskCardProps {
 }
 
 export const TaskCard: React.FC<TaskCardProps> = ({
-  id,
+  _id,
   title,
   category,
   priority,
@@ -90,7 +90,7 @@ export const TaskCard: React.FC<TaskCardProps> = ({
           isOpen={isModalOpen}
           onClose={() => setIsModalOpen(false)}
           task={{
-            id,
+            _id,
             title,
             description,
             category,
@@ -98,6 +98,7 @@ export const TaskCard: React.FC<TaskCardProps> = ({
             progress,
             dueDate,
             aiOptimized: aiPrioritized,
+            completed,
           }}
         />
       )}

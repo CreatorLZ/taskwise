@@ -14,6 +14,7 @@ import {
 } from "@/components/ui/card";
 import { Brain, Loader2 } from "lucide-react";
 import api from "@/utils/api";
+import useAuthStore from "@/store/authstore";
 
 export default function LoginPage() {
   const [isLoading, setIsLoading] = useState(false);
@@ -22,6 +23,11 @@ export default function LoginPage() {
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const navigate = useNavigate();
 
+  // Zustand store actions
+  const setUser = useAuthStore((state) => state.setUser);
+  const setUserId = useAuthStore((state) => state.setUserId);
+  const setToken = useAuthStore((state) => state.setToken);
+
   const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     setIsLoading(true);
@@ -29,10 +35,15 @@ export default function LoginPage() {
 
     try {
       const response = await api.post("/auth/login", { email, password });
-      const { token } = response.data;
+      const { token, user, userId } = response.data;
 
-      // Store the token (e.g., in localStorage)
-      localStorage.setItem("token", token);
+      setUser(user);
+      setToken(token);
+      setUserId(userId);
+
+      // console.log(user);
+      // console.log(token);
+      // console.log(userId);
 
       // Navigate to the homepage
       console.log(token);

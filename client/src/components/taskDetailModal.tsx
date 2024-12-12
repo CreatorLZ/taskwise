@@ -1,104 +1,3 @@
-// import React, { useState } from "react";
-// import {
-//   Dialog,
-//   DialogContent,
-//   DialogDescription,
-//   DialogHeader,
-//   DialogTitle,
-// } from "@/components/ui/dialog";
-// import { Button } from "@/components/ui/button";
-// import { Progress } from "@/components/ui/progress";
-// import { Badge } from "@/components/ui/badge";
-// import { Calendar, Clock, MessageSquare, Sparkles } from "lucide-react";
-
-// // Define the types for the component props
-// interface TaskDetailModalProps {
-//   isOpen: boolean;
-//   onClose: () => void;
-//   task: {
-//     id: string;
-//     title: string;
-//     description: string;
-//     category: string;
-//     priority: string;
-//     progress: number;
-//     dueDate: string;
-//     aiOptimized: boolean;
-//   };
-// }
-
-// export const TaskDetailModal: React.FC<TaskDetailModalProps> = ({
-//   isOpen,
-//   onClose,
-//   task,
-// }) => {
-//   const [isEditing, setIsEditing] = useState<boolean>(false);
-
-//   return (
-//     <Dialog open={isOpen} onOpenChange={onClose}>
-//       <DialogContent className="sm:max-w-[425px]">
-//         <DialogHeader>
-//           <DialogTitle className="flex items-center gap-2">
-//             {task.title}
-//             {task.aiOptimized && <Sparkles className="h-4 w-4 text-primary" />}
-//           </DialogTitle>
-//           <DialogDescription>{task.category}</DialogDescription>
-//         </DialogHeader>
-//         <div className="grid gap-4 py-4">
-//           <div className="space-y-2">
-//             <h4 className="font-medium">Description</h4>
-//             <p className="text-sm text-muted-foreground">{task.description}</p>
-//           </div>
-//           <div className="flex items-center gap-4">
-//             <Badge
-//               variant={
-//                 task.priority === "High"
-//                   ? "destructive"
-//                   : task.priority === "Medium"
-//                   ? "default"
-//                   : "secondary"
-//               }
-//             >
-//               {task.priority} Priority
-//             </Badge>
-//             <div className="flex items-center text-sm text-muted-foreground">
-//               <Calendar className="mr-2 h-4 w-4" />
-//               Due {task.dueDate}
-//             </div>
-//           </div>
-//           <div className="space-y-2">
-//             <div className="flex justify-between text-sm font-medium">
-//               <span>Progress</span>
-//               <span>{task.progress}%</span>
-//             </div>
-//             <Progress value={task.progress} className="w-full" />
-//           </div>
-//           {task.aiOptimized && (
-//             <div className="flex items-start gap-2 rounded-md border p-3">
-//               <Sparkles className="h-5 w-5 text-primary mt-0.5" />
-//               <div className="space-y-1">
-//                 <p className="text-sm font-medium">AI Optimized</p>
-//                 <p className="text-xs text-muted-foreground">
-//                   This task has been optimized by AI for better productivity.
-//                 </p>
-//               </div>
-//             </div>
-//           )}
-//         </div>
-//         <div className="flex justify-between">
-//           <Button variant="outline" onClick={() => setIsEditing(true)}>
-//             Edit Task
-//           </Button>
-//           <Button variant="default" className="bg-primary" onClick={onClose}>
-//             Close
-//           </Button>
-//         </div>
-//       </DialogContent>
-//     </Dialog>
-//   );
-// };
-"use client";
-
 import { useState } from "react";
 import {
   Dialog,
@@ -113,7 +12,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Progress } from "@/components/ui/progress";
 import { Badge } from "@/components/ui/badge";
-import { Label } from "@/components/ui/label";
+// import { Label } from "@/components/ui/label";
 import { Calendar, Sparkles, Trash2 } from "lucide-react";
 import {
   Select,
@@ -122,10 +21,11 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import api from "@/utils/api";
 
 // Define the Task interface
 interface Task {
-  id: string;
+  _id: string;
   title: string;
   description: string;
   category: string;
@@ -133,6 +33,7 @@ interface Task {
   progress: number;
   dueDate: string; // Format: "YYYY-MM-DD"
   aiOptimized: boolean;
+  completed: boolean;
 }
 
 // Define the props for the TaskDetailModal component
@@ -148,26 +49,46 @@ interface TaskDetailModalProps {
 export function TaskDetailModal({
   isOpen,
   onClose,
-  // onSave,
-  // onDelete,
   task,
 }: TaskDetailModalProps) {
   const [isEditing, setIsEditing] = useState(false);
   const [editedTask, setEditedTask] = useState<Task>(task);
+  const [isProcessing, setIsProcessing] = useState(false);
 
-  // const handleSave = () => {
-  //   onSave(editedTask); // Pass updated task to parent
-  //   setIsEditing(false); // Exit editing mode
-  // };
+  // Handle task deletion
+  const handleDelete = async () => {
+    setIsProcessing(true);
+    try {
+      await api.delete(`/tasks/${task._id}`);
+      // if (onTaskDelete) onTaskDelete(task.id); // Notify parent
+      onClose(); // Close modal
+    } catch (error: any) {
+      console.error("Failed to delete task:", error?.response?.data?.message);
+    } finally {
+      setIsProcessing(false);
+    }
+  };
 
-  // const handleDelete = () => {
-  //   onDelete(task.id); // Notify parent to delete task
-  //   onClose(); // Close modal after delete
-  // };
+  // Handle marking task as complete
+  const handleMarkComplete = async () => {
+    setIsProcessing(true);
+    try {
+      const response = await api.patch(`/tasks/${task._id}/complete`);
+      const updatedTask = response.data;
+      // if (onTaskUpdate) onTaskUpdate(updatedTask); // Notify parent
+    } catch (error: any) {
+      console.error(
+        "Failed to mark task as complete:",
+        error?.response?.data?.message
+      );
+    } finally {
+      setIsProcessing(false);
+    }
+  };
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="sm:max-w-[425px] overflow-scroll pt-10 ">
+      <DialogContent className="sm:max-w-[500px] overflow-x-auto  pt-10 ">
         <DialogHeader className="">
           <DialogTitle className="flex items-center gap-2">
             {isEditing ? (
@@ -242,9 +163,9 @@ export function TaskDetailModal({
             ) : (
               <Badge
                 variant={
-                  task.priority === "High"
+                  task.priority.toLocaleLowerCase() === "high"
                     ? "destructive"
-                    : task.priority === "Medium"
+                    : task.priority.toLocaleLowerCase() === "medium"
                     ? "default"
                     : "secondary"
                 }
@@ -310,19 +231,20 @@ export function TaskDetailModal({
           )}
         </div>
         {/* Footer Buttons */}
-        <DialogFooter className="sm:justify-between flex-row justify-between">
+        <DialogFooter className="sm:justify-between flex-row justify-between gap-3">
           <div>
             {isEditing ? (
               <>
                 <Button
                   variant="outline"
                   onClick={() => setIsEditing(false)}
-                  className="mr-2"
+                  className=""
                 >
                   Cancel
                 </Button>
                 <Button
-                // onClick={handleSave}
+                  // onClick={handleSave}
+                  className="mt-3"
                 >
                   Save Changes
                 </Button>
@@ -333,14 +255,23 @@ export function TaskDetailModal({
               </Button>
             )}
           </div>
-          <div className="flex items-center">
+          <div className="flex justify-between gap-3">
             <Button
               variant="destructive"
-              // onClick={handleDelete}
-              className="mr-2"
+              onClick={handleDelete}
+              disabled={isProcessing}
+              className=""
             >
               <Trash2 className="w-4 h-4 mr-2" />
               Delete
+            </Button>
+            <Button
+              variant={task.completed ? "secondary" : "default"}
+              onClick={handleMarkComplete}
+              disabled={isProcessing}
+              className=""
+            >
+              {task.completed ? "Mark Incomplete" : "Mark Complete"}
             </Button>
             {!isEditing && (
               <Button

@@ -20,10 +20,10 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   Brain,
   CheckCircle2,
-  Circle,
+  // Circle,
   Clock,
   ListTodo,
-  Plus,
+  // Plus,
   Sparkles,
   Star,
   TrendingUp,
@@ -32,6 +32,7 @@ import { NewTaskModal } from "@/components/ui/newTask";
 import { TaskCard } from "@/components/taskCard";
 import api from "@/utils/api";
 import { jwtDecode } from "jwt-decode";
+import useAuthStore from "@/store/authstore";
 // import { ThemeToggle } from "@/components/theme-toggle"
 
 export default function TaskDashboard() {
@@ -42,6 +43,9 @@ export default function TaskDashboard() {
   const [tasks, setTasks] = useState<Task[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const user = useAuthStore((state) => state.user);
+
+  console.log(user);
 
   interface JwtPayload {
     id: string;
@@ -50,7 +54,7 @@ export default function TaskDashboard() {
   }
 
   interface Task {
-    id: string;
+    _id: string;
     title: string;
     category: string;
     priority: string;
@@ -100,6 +104,8 @@ export default function TaskDashboard() {
       }
     });
   };
+
+  //fetch user tasks
 
   const fetchTasksForUser = async (userId: string) => {
     setIsLoading(true);
@@ -250,7 +256,7 @@ export default function TaskDashboard() {
                   {/* ideal test taskcard template */}
                   <TabsContent value="in-progress" className="space-y-4">
                     <TaskCard
-                      id="1"
+                      _id="1"
                       title="Update Design System"
                       category="Design"
                       priority="High"
@@ -265,8 +271,8 @@ export default function TaskDashboard() {
                   <TabsContent value="in-progress" className="space-y-4">
                     {filterTasks(tasks).map((task) => (
                       <TaskCard
-                        key={task.id}
-                        id={task.id}
+                        key={task._id}
+                        _id={task._id}
                         title={task.title}
                         category={task.category}
                         priority={task.priority}
@@ -285,8 +291,8 @@ export default function TaskDashboard() {
                   <TabsContent value="completed" className="space-y-4">
                     {filterTasks(tasks, true).map((task) => (
                       <TaskCard
-                        key={task.id}
-                        id={task.id}
+                        key={task._id}
+                        _id={task._id}
                         title={task.title}
                         category={task.category}
                         priority={task.priority}

@@ -23,7 +23,7 @@ app.use(express.json());
 app.use(
   cors({
     origin: "http://localhost:5173", // Allow requests from the frontend
-    methods: ["GET", "POST", "PUT", "DELETE"], // Allowed HTTP methods
+    methods: ["GET", "POST", "PUT", "DELETE", "PATCH"], // Allowed HTTP methods
     credentials: true, // Allow credentials (if required)
   })
 );

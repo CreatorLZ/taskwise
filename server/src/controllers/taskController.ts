@@ -3,6 +3,7 @@ import Task from "../models/Task";
 import asyncHandler from "express-async-handler";
 import { format, formatDistanceToNow } from "date-fns";
 import calculateTimeProgress from "../utils/calculateTimeProgress";
+import mongoose from "mongoose";
 
 // Get all tasks for a specific user with formatted dueTime
 export const getTasksByUserId = asyncHandler(
@@ -106,12 +107,25 @@ export const deleteTask = asyncHandler(
 // Mark a task as completed
 export const markTaskAsCompleted = asyncHandler(
   async (req: Request, res: Response): Promise<void | any> => {
+    // Validate the task ID
+    const { id } = req.params;
+    if (!mongoose.Types.ObjectId.isValid(id)) {
+      return res.status(400).json({ message: "Invalid task ID" });
+    }
+
+    // Find and update the task
     const task = await Task.findByIdAndUpdate(
-      req.params.id,
-      { completed: true },
-      { new: true }
+      id,
+      { completed: true, priority: "Completed" }, // Fields to update
+      { new: true } // Return the updated document
     );
-    if (!task) return res.status(404).json({ message: "Task not found" });
+
+    // Handle task not found
+    if (!task) {
+      return res.status(404).json({ message: "Task not found" });
+    }
+
+    // Send the updated task in the response
     res.json(task);
   }
 );
