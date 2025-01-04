@@ -15,6 +15,7 @@ import {
 import { Brain, Loader2 } from "lucide-react";
 import api from "@/utils/api";
 import useAuthStore from "@/store/authstore";
+import { useQueryClient } from "@tanstack/react-query";
 
 export default function LoginPage() {
   const [isLoading, setIsLoading] = useState(false);
@@ -22,6 +23,7 @@ export default function LoginPage() {
   const [password, setPassword] = useState("");
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
 
   // Zustand store actions
   const setUser = useAuthStore((state) => state.setUser);
@@ -41,15 +43,21 @@ export default function LoginPage() {
       setToken(token);
       setUserId(userId);
 
-      // console.log(user);
-      console.log(`token: ${token}`);
-      // console.log(userId);
+      // Prefetch tasks after successful login
+      await queryClient.prefetchQuery({
+        queryKey: ["tasks", userId],
+        queryFn: async () => {
+          const response = await api.get(`/tasks/user/${userId}`);
+          return response.data;
+        },
+      });
 
       // Navigate to the homepage
       navigate("/");
     } catch (error: any) {
       // Handle API errors
       const errorResponse = error?.response?.data?.message || "Login failed";
+      console.log(error);
       setErrorMessage(errorResponse);
     } finally {
       setIsLoading(false);
