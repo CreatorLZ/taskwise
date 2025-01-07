@@ -20,7 +20,7 @@ export const getTasksByUserId = asyncHandler(
     });
 
     if (!tasks || tasks.length === 0) {
-      return res.status(404).json({ message: "No tasks found for this user" });
+      return res.json({ message: "No tasks found for this user" });
     }
 
     const formattedTasks = tasks.map((task) => {
@@ -45,11 +45,12 @@ export const getTasksByUserId = asyncHandler(
   }
 );
 
-// Get all tasks with sorting by priority and dueDate
+// Get all tasks with sorting by priority and dueDate. this is a route for admins only . will update later
 export const getAllTasks = asyncHandler(async (req: Request, res: Response) => {
   const tasks = await Task.find().sort({ priority: -1, dueDate: 1 }); // -1 for descending priority, 1 for ascending dueDate
   res.json(tasks);
 });
+
 //create a new task
 export const createTask = asyncHandler(async (req: Request, res: Response) => {
   const taskData = {

@@ -10,6 +10,7 @@ interface IUser extends Document {
   isLocked: boolean;
   comparePassword(plainPassword: string): Promise<boolean>;
   fcmToken?: string;
+  tasks: Types.ObjectId[]; // Array of task references
 }
 
 const UserSchema: Schema<IUser> = new Schema(
@@ -25,6 +26,7 @@ const UserSchema: Schema<IUser> = new Schema(
     failedLoginAttempts: { type: Number, default: 0 },
     isLocked: { type: Boolean, default: false },
     fcmToken: { type: String },
+    tasks: [{ type: mongoose.Schema.Types.ObjectId, ref: "Task" }], // Reference to Task collection
   },
   { timestamps: true }
 );

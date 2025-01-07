@@ -1,5 +1,4 @@
-import { useEffect, useState } from "react";
-import { Button } from "@/components/ui/button";
+import { useCallback, useMemo, useState } from "react";
 import {
   Card,
   CardContent,
@@ -30,26 +29,28 @@ import {
 } from "lucide-react";
 import { NewTaskModal } from "@/components/ui/newTask";
 import { TaskCard } from "@/components/taskCard";
-import api from "@/utils/api";
 
 import useAuthStore from "@/store/authstore";
-import useTaskStore from "@/store/taskStore";
-// import { ThemeToggle } from "@/components/theme-toggle"
+import useTaskStore, { useFetchTasks } from "@/store/taskStore";
+import TaskSkeletonLoader from "@/components/taskSkeletonLoader";
+import EmptyTaskState from "@/components/emptyTasksState";
 
 export default function TaskDashboard() {
   const [prioritizationEnabled, setPrioritizationEnabled] = useState(false);
   const [taskFilter, setTaskFilter] = useState<"all" | "today" | "upcoming">(
     "all"
   );
-  const [isLoading, setIsLoading] = useState(false);
-  const [errorMessage, setErrorMessage] = useState<string | null>(null);
+
   const user = useAuthStore((state) => state.user);
-  const tasks = useTaskStore((state) => state.tasks);
-  const setTasks = useTaskStore((state) => state.setTasks);
   const userId = useAuthStore((state) => state.userId);
 
-  console.log(user);
+  // Fetch tasks using React Query
+  const { isLoading, error } = useFetchTasks(userId!);
 
+  const tasks = useTaskStore((state) => state.tasks) ?? [];
+
+  console.log(user);
+  console.log(tasks);
   interface Task {
     _id: string;
     title: string;
@@ -63,66 +64,53 @@ export default function TaskDashboard() {
     completed?: boolean;
   }
 
-  const filterTasks = (tasks: Task[], completed: boolean = false) => {
-    // Get today's date in YYYY-MM-DD format
-    const today = new Date().toISOString().split("T")[0];
-
-    return tasks.filter((task) => {
-      // First, check completion status
-      const isCompletedMatch = completed
-        ? ["completed", "Completed"].includes(task.status) || task.completed
-        : !task.completed &&
-          ["Pending", "In-progress", "pending", "in-progress"].includes(
-            task.status
-          );
-
-      // Then apply time-based filtering
-      switch (taskFilter) {
-        case "today":
-          return isCompletedMatch && task.dueDate === today;
-        case "upcoming":
-          return isCompletedMatch && new Date(task.dueDate) > new Date(today);
-        default: // 'all' case
-          return isCompletedMatch;
+  // Memoize the filterTasks function
+  const filterTasks = useCallback(
+    (tasks: Task[], completed: boolean = false): Task[] => {
+      if (!Array.isArray(tasks)) {
+        console.warn("Tasks is not an array:", tasks);
+        return [];
       }
-    });
-  };
 
-  //fetch user tasks
+      const today = new Date().toISOString().split("T")[0];
 
-  const fetchTasksForUser = async (userId: string) => {
-    setIsLoading(true);
-    setErrorMessage(null);
+      return tasks.filter((task: Task) => {
+        if (!task) return false;
 
-    try {
-      // Fetch tasks for the user
-      const response = await api.get(`/tasks/user/${userId}`);
-      console.log("Fetched tasks:", response.data);
+        const isCompletedMatch = completed
+          ? ["completed", "Completed"].includes(task.status) || task.completed
+          : !task.completed &&
+            ["Pending", "In-progress", "pending", "in-progress"].includes(
+              task.status
+            );
 
-      // Update the tasks state
-      if (Array.isArray(response.data)) {
-        setTasks(response.data);
-      } else {
-        throw new Error("Unexpected response format");
-      }
-    } catch (error: any) {
-      console.error("Error fetching tasks:", error);
-      setErrorMessage(
-        error.response?.data?.message ||
-          "Failed to load tasks. Please try again."
-      );
-    } finally {
-      setIsLoading(false);
-    }
-  };
+        switch (taskFilter) {
+          case "today":
+            return isCompletedMatch && task.dueDate === today;
+          case "upcoming":
+            return isCompletedMatch && new Date(task.dueDate) > new Date(today);
+          default:
+            return isCompletedMatch;
+        }
+      });
+    },
+    [taskFilter]
+  ); // Only recreate when taskFilter changes
 
-  useEffect(() => {
-    if (userId) {
-      fetchTasksForUser(userId);
-    } else {
-      setErrorMessage("User not authenticated");
-    }
-  }, []);
+  // Memoize the filtered results
+  const filteredInProgressTasks = useMemo(
+    () => filterTasks(tasks, false),
+    [tasks, filterTasks]
+  );
+
+  const filteredCompletedTasks = useMemo(
+    () => filterTasks(tasks, true),
+    [tasks, filterTasks]
+  );
+
+  // Early returns for loading and error states
+  // if (!userId) return <div>Please log in to view your tasks.</div>;
+  // if (error) return <div>Error loading tasks. Please try again.</div>;
 
   return (
     <div className="min-h-screen bg-background text-foreground">
@@ -138,11 +126,6 @@ export default function TaskDashboard() {
               <p className="text-muted-foreground">Powered by advanced AI</p>
             </div>
             <div className="flex items-center gap-4">
-              {/* <ThemeToggle /> */}
-              {/* <Button className="bg-primary hover:bg-primary/90">
-                <Plus className="w-4 h-4 mr-2" />
-                New Task
-              </Button> */}
               <NewTaskModal />
             </div>
           </div>
@@ -235,63 +218,66 @@ export default function TaskDashboard() {
                     <TabsTrigger value="completed">Completed</TabsTrigger>
                   </TabsList>
 
-                  {/* ideal test taskcard template */}
-                  <TabsContent value="in-progress" className="space-y-4">
-                    <TaskCard
-                      _id="1"
-                      title="Update Design System"
-                      category="Design"
-                      priority="High"
-                      progress={65}
-                      dueTime="2 hours"
-                      aiPrioritized={prioritizationEnabled}
-                      description="Revise and update the company's design system to ensure consistency across all products."
-                      dueDate="2023-07-15"
-                    />
-                  </TabsContent>
-
-                  <TabsContent value="in-progress" className="space-y-4">
-                    {filterTasks(tasks).map((task) => (
-                      <TaskCard
-                        key={task._id}
-                        _id={task._id}
-                        title={task.title}
-                        category={task.category}
-                        priority={task.priority}
-                        progress={task.progress}
-                        dueTime={task.dueTime}
-                        completed={task.completed}
-                        dueDate={task.dueDate}
-                        aiPrioritized={prioritizationEnabled}
-                        description={task.description}
-                      />
-                    ))}
-                    {filterTasks(tasks).length === 0 && (
-                      <p className="text-muted-foreground">No tasks found.</p>
-                    )}
-                  </TabsContent>
-                  <TabsContent value="completed" className="space-y-4">
-                    {filterTasks(tasks, true).map((task) => (
-                      <TaskCard
-                        key={task._id}
-                        _id={task._id}
-                        title={task.title}
-                        category={task.category}
-                        priority={task.priority}
-                        progress={task.progress}
-                        dueTime={task.dueTime}
-                        dueDate={task.dueDate}
-                        completed
-                        aiPrioritized={prioritizationEnabled}
-                        description={task.description}
-                      />
-                    ))}
-                    {filterTasks(tasks, true).length === 0 && (
-                      <p className="text-muted-foreground">
-                        No completed tasks found.
-                      </p>
-                    )}
-                  </TabsContent>
+                  {isLoading ? (
+                    <div className="space-y-4">
+                      {[...Array(3)].map((_, index) => (
+                        <TaskSkeletonLoader key={index} />
+                      ))}
+                    </div>
+                  ) : error?.message == "Unauthorized" ? (
+                    <div>error loading tasks. try refreshing the page </div>
+                  ) : !userId ? (
+                    <div> Please log in to view your tasks.</div>
+                  ) : tasks.length === 0 || filterTasks(tasks).length === 0 ? (
+                    <EmptyTaskState />
+                  ) : (
+                    <>
+                      <TabsContent value="in-progress" className="space-y-4">
+                        {filteredInProgressTasks.map((task) => (
+                          <TaskCard
+                            key={task._id}
+                            _id={task._id}
+                            title={task.title}
+                            category={task.category}
+                            priority={task.priority}
+                            progress={task.progress}
+                            dueTime={task.dueTime}
+                            completed={task.completed}
+                            dueDate={task.dueDate}
+                            aiPrioritized={prioritizationEnabled}
+                            description={task.description}
+                          />
+                        ))}
+                        {filteredInProgressTasks.length === 0 && (
+                          <p className="text-muted-foreground">
+                            No tasks found.
+                          </p>
+                        )}
+                      </TabsContent>
+                      <TabsContent value="completed" className="space-y-4">
+                        {filteredCompletedTasks.map((task) => (
+                          <TaskCard
+                            key={task._id}
+                            _id={task._id}
+                            title={task.title}
+                            category={task.category}
+                            priority={task.priority}
+                            progress={task.progress}
+                            dueTime={task.dueTime}
+                            dueDate={task.dueDate}
+                            completed
+                            aiPrioritized={prioritizationEnabled}
+                            description={task.description}
+                          />
+                        ))}
+                        {filteredCompletedTasks.length === 0 && (
+                          <p className="text-muted-foreground">
+                            No completed tasks found.
+                          </p>
+                        )}
+                      </TabsContent>
+                    </>
+                  )}
                 </Tabs>
               </CardContent>
             </Card>

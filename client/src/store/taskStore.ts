@@ -19,13 +19,15 @@ export interface Task {
 interface TaskStore {
   tasks: Task[];
   setTasks: (tasks: Task[]) => void;
+  clearTasks: () => void;
 }
 
 const useTaskStore = create(
   persist<TaskStore>(
     (set) => ({
       tasks: [],
-      setTasks: (tasks) => set({ tasks }),
+      setTasks: (tasks) => set({ tasks: tasks || [] }),
+      clearTasks: () => set({ tasks: [] }),
     }),
     {
       name: "task-storage",
@@ -55,7 +57,8 @@ export function useFetchTasks(userId: string) {
     queryFn: async () => {
       const response = await api.get(`/tasks/user/${userId}`);
       setTasks(response.data);
-      return response.data as Task[];
+      console.log(response.data);
+      return response.data;
     },
     staleTime: 5000,
     gcTime: 10 * 60 * 1000,

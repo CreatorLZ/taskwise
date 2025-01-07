@@ -16,6 +16,7 @@ import { Brain, Loader2 } from "lucide-react";
 import api from "@/utils/api";
 import useAuthStore from "@/store/authstore";
 import { useQueryClient } from "@tanstack/react-query";
+import useTaskStore from "@/store/taskStore";
 
 export default function LoginPage() {
   const [isLoading, setIsLoading] = useState(false);
@@ -29,6 +30,7 @@ export default function LoginPage() {
   const setUser = useAuthStore((state) => state.setUser);
   const setUserId = useAuthStore((state) => state.setUserId);
   const setToken = useAuthStore((state) => state.setToken);
+  const setTasks = useTaskStore((state) => state.setTasks);
 
   const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -43,11 +45,15 @@ export default function LoginPage() {
       setToken(token);
       setUserId(userId);
 
+      const clearTasks = useTaskStore.getState().clearTasks;
+      clearTasks();
+
       // Prefetch tasks after successful login
       await queryClient.prefetchQuery({
         queryKey: ["tasks", userId],
         queryFn: async () => {
           const response = await api.get(`/tasks/user/${userId}`);
+          setTasks(response.data);
           return response.data;
         },
       });
