@@ -226,8 +226,6 @@ export default function TaskDashboard() {
                     </div>
                   ) : error?.message == "Unauthorized" ? (
                     <div>error loading tasks. try refreshing the page </div>
-                  ) : !userId ? (
-                    <div> Please log in to view your tasks.</div>
                   ) : tasks.length === 0 || filterTasks(tasks).length === 0 ? (
                     <EmptyTaskState />
                   ) : (
