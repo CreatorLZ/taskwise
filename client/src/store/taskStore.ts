@@ -70,7 +70,7 @@ export function useCreateTaskMutation() {
   const setTasks = useTaskStore((state) => state.setTasks);
 
   return useMutation({
-    mutationFn: async (taskData: Omit<Task, "_id">) => {
+    mutationFn: async (taskData: Partial<Omit<Task, "_id">>) => {
       const response = await api.post("/tasks", taskData);
       return response.data as Task;
     },

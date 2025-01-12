@@ -1,5 +1,6 @@
 import { useState } from "react";
-import api from "@/utils/api"; // Import the API utility
+import api from "@/utils/api";
+import { useCreateTaskMutation } from "@/store/taskStore";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -38,6 +39,7 @@ import {
 } from "@/components/ui/popover";
 
 export function NewTaskModal() {
+  const [open, setOpen] = useState(false);
   const [isNlpMode, setIsNlpMode] = useState(false);
   const [nlpInput, setNlpInput] = useState("");
   const [taskName, setTaskName] = useState("");
@@ -46,6 +48,8 @@ export function NewTaskModal() {
   const [date, setDate] = useState<Date>();
   const [isProcessing, setIsProcessing] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+
+  const { mutate: createTask } = useCreateTaskMutation();
 
   const handleNlpSubmit = async () => {
     setIsProcessing(true);
@@ -60,49 +64,55 @@ export function NewTaskModal() {
       setNlpInput("");
     } catch (error: any) {
       const errorResponse =
-        error?.response?.data?.message || "Failed to create task using AI.";
+        error?.response?.data?.message || "Failed to create task using  AI.";
       setErrorMessage(errorResponse);
     } finally {
       setIsProcessing(false);
+      setOpen(false);
     }
   };
 
-  const handleManualSubmit = async () => {
-    setIsProcessing(true);
-    setErrorMessage(null);
+  const handleManualSubmit = () => {
+    if (!taskName || !priority || !date) {
+      setErrorMessage("Please fill in all required fields.");
+      return;
+    }
 
-    try {
-      const response = await api.post("/tasks", {
+    createTask(
+      {
         title: taskName,
         description,
         priority,
-        dueDate: date?.toISOString(),
-      });
-      console.log("Manual Task created:", response.data);
-      // Reset the inputs and close the dialog
-      setTaskName("");
-      setDescription("");
-      setPriority("");
-      setDate(undefined);
-    } catch (error: any) {
-      const errorResponse =
-        error?.response?.data?.message || "Failed to create task.";
-      setErrorMessage(errorResponse);
-    } finally {
-      setIsProcessing(false);
-    }
+        dueDate: date.toISOString(),
+      },
+      {
+        onSuccess: () => {
+          // Reset the inputs and close the dialog
+          setTaskName("");
+          setDescription("");
+          setPriority("");
+          setDate(undefined);
+          setOpen(false);
+        },
+        onError: (error: any) => {
+          const errorResponse =
+            error?.response?.data?.message || "Failed to create task.";
+          setErrorMessage(errorResponse);
+        },
+      }
+    );
   };
 
   const handleSubmit = async () => {
     if (isNlpMode) {
       await handleNlpSubmit();
     } else {
-      await handleManualSubmit();
+      handleManualSubmit();
     }
   };
 
   return (
-    <Dialog>
+    <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
         <Button>
           <Plus className="w-4 h-4 mr-2" />

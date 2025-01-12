@@ -94,7 +94,7 @@ export default function TaskDashboard() {
         }
       });
     },
-    [taskFilter]
+    [taskFilter, tasks]
   ); // Only recreate when taskFilter changes
 
   // Memoize the filtered results
