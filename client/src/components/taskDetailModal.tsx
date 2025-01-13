@@ -12,7 +12,6 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Progress } from "@/components/ui/progress";
 import { Badge } from "@/components/ui/badge";
-// import { Label } from "@/components/ui/label";
 import { Calendar, Sparkles, Trash2 } from "lucide-react";
 import {
   Select,
@@ -21,9 +20,11 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import api from "@/utils/api";
+import {
+  useDeleteTaskMutation,
+  useUpdateTaskMutation,
+} from "@/store/taskStore";
 
-// Define the Task interface
 interface Task {
   _id: string;
   title: string;
@@ -31,21 +32,17 @@ interface Task {
   category: string;
   priority: string;
   progress: number;
-  dueDate: string; // Format: "YYYY-MM-DD"
+  dueDate: string;
   aiOptimized: boolean;
   completed: boolean;
 }
 
-// Define the props for the TaskDetailModal component
 interface TaskDetailModalProps {
   isOpen: boolean;
   onClose: () => void;
-  // onSave: (updatedTask: Task) => void;
-  // onDelete: (taskId: string) => void;
   task: Task;
 }
 
-// Component implementation
 export function TaskDetailModal({
   isOpen,
   onClose,
@@ -53,43 +50,61 @@ export function TaskDetailModal({
 }: TaskDetailModalProps) {
   const [isEditing, setIsEditing] = useState(false);
   const [editedTask, setEditedTask] = useState<Task>(task);
-  const [isProcessing, setIsProcessing] = useState(false);
+
+  // Use the mutation hooks
+  const updateTaskMutation = useUpdateTaskMutation();
+  const deleteTaskMutation = useDeleteTaskMutation();
 
   // Handle task deletion
   const handleDelete = async () => {
-    setIsProcessing(true);
     try {
-      await api.delete(`/tasks/${task._id}`);
-      // if (onTaskDelete) onTaskDelete(task.id); // Notify parent
-      onClose(); // Close modal
-    } catch (error: any) {
-      console.error("Failed to delete task:", error?.response?.data?.message);
-    } finally {
-      setIsProcessing(false);
+      await deleteTaskMutation.mutateAsync(task._id);
+      onClose(); // Close modal after successful deletion
+    } catch (error) {
+      console.error("Failed to delete task:", error);
     }
   };
 
   // Handle marking task as complete
   const handleMarkComplete = async () => {
-    setIsProcessing(true);
     try {
-      const response = await api.patch(`/tasks/${task._id}/complete`);
-      const updatedTask = response.data;
-      // if (onTaskUpdate) onTaskUpdate(updatedTask); // Notify parent
-    } catch (error: any) {
-      console.error(
-        "Failed to mark task as complete:",
-        error?.response?.data?.message
-      );
-    } finally {
-      setIsProcessing(false);
+      await updateTaskMutation.mutateAsync({
+        taskId: task._id,
+        updates: { completed: !task.completed },
+      });
+    } catch (error) {
+      console.error("Failed to update task completion status:", error);
     }
   };
 
+  // Handle saving edited task
+  const handleSave = async () => {
+    try {
+      await updateTaskMutation.mutateAsync({
+        taskId: task._id,
+        updates: {
+          title: editedTask.title,
+          description: editedTask.description,
+          category: editedTask.category,
+          priority: editedTask.priority,
+          progress: editedTask.progress,
+          dueDate: editedTask.dueDate,
+        },
+      });
+      setIsEditing(false);
+    } catch (error) {
+      console.error("Failed to save task updates:", error);
+    }
+  };
+
+  // Check if any mutation is in progress
+  const isProcessing =
+    updateTaskMutation.isPending || deleteTaskMutation.isPending;
+
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="sm:max-w-[500px] overflow-x-auto  pt-10 ">
-        <DialogHeader className="">
+      <DialogContent className="sm:max-w-[500px] overflow-x-auto pt-10">
+        <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             {isEditing ? (
               <Input
@@ -163,9 +178,9 @@ export function TaskDetailModal({
             ) : (
               <Badge
                 variant={
-                  task.priority.toLocaleLowerCase() === "high"
+                  task.priority.toLowerCase() === "high"
                     ? "destructive"
-                    : task.priority.toLocaleLowerCase() === "medium"
+                    : task.priority.toLowerCase() === "medium"
                     ? "default"
                     : "secondary"
                 }
@@ -188,12 +203,12 @@ export function TaskDetailModal({
               )}
             </div>
           </div>
-          {/* Progress */}
+          {/* Progress. change to time elapsed on server */}
           <div className="space-y-2">
             <div className="flex justify-between text-sm font-medium">
-              <span>Progress</span>
+              <span>Time elapsed</span>
               <span>
-                {isEditing ? (
+                {/* {isEditing ? (
                   <Input
                     type="number"
                     min="0"
@@ -209,7 +224,8 @@ export function TaskDetailModal({
                   />
                 ) : (
                   `${task.progress}%`
-                )}
+                )} */}
+                {task.progress}%
               </span>
             </div>
             <Progress
@@ -243,8 +259,9 @@ export function TaskDetailModal({
                   Cancel
                 </Button>
                 <Button
-                  // onClick={handleSave}
+                  onClick={handleSave}
                   className="mt-3"
+                  disabled={isProcessing}
                 >
                   Save Changes
                 </Button>

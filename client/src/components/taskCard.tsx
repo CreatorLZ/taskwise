@@ -2,7 +2,7 @@ import React, { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
 import { TaskDetailModal } from "@/components/taskDetailModal";
-import { CheckCircle2, Circle, Sparkles } from "lucide-react";
+import { CheckCircle2, Circle, Hourglass, Sparkles } from "lucide-react";
 
 // Define the types for the component props
 interface TaskCardProps {
@@ -72,7 +72,18 @@ export const TaskCard: React.FC<TaskCardProps> = ({
         <div className="space-y-3">
           <div className="space-y-1">
             <div className="flex justify-between text-sm text-muted-foreground">
-              <span>Progress</span>
+              <div className="flex items-start gap-3">
+                <span>Time elapsed</span>
+                <Hourglass
+                  className={`w-4 h-4 mt-1 ${
+                    progress <= 33
+                      ? "text-emerald-400"
+                      : progress <= 66
+                      ? "text-amber-400"
+                      : "text-rose-500"
+                  }`}
+                />
+              </div>
               <span>{progress}%</span>
             </div>
             <Progress value={progress} />
