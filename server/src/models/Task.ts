@@ -12,6 +12,7 @@ interface ITask extends Document {
   description?: string;
   completed: boolean;
   priority: string; // "low", "medium", "high", "completed"
+  previousPriority?: string;
   dueDate: Date;
   dueTime: Date;
   status: string; // "pending", "in-progress", "completed"
@@ -51,6 +52,7 @@ const TaskSchema: Schema = new Schema(
       default: "Medium",
       required: true,
     },
+    previousPriority: { type: String },
     dueDate: { type: Date, required: true },
     dueTime: { type: Date },
     status: {

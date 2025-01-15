@@ -8,6 +8,7 @@ export interface Task {
   title: string;
   category: string;
   priority: string;
+  previousPriority?: string;
   progress: number;
   dueTime: string;
   dueDate: string;
@@ -86,6 +87,32 @@ export function useCreateTaskMutation() {
     },
     onError: (error) => {
       console.error("Error creating task:", error);
+    },
+  });
+}
+
+export function useCreateNLPTaskMutation() {
+  const queryClient = useQueryClient();
+  const setTasks = useTaskStore((state) => state.setTasks);
+
+  return useMutation({
+    mutationFn: async (command: string) => {
+      const response = await api.post("/create-from-nlp", { command });
+      return response.data as Task;
+    },
+    onSuccess: (newTask) => {
+      // Invalidate and refetch
+      queryClient.invalidateQueries({
+        queryKey: ["tasks"],
+      });
+
+      // Update Zustand store
+      const currentTasks = useTaskStore.getState().tasks;
+      setTasks([...currentTasks, newTask]);
+    },
+    onError: (error) => {
+      console.error("Error creating NLP task:", error);
+      throw error; // Propagate error to component
     },
   });
 }

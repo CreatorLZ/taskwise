@@ -1,6 +1,9 @@
 import { useState } from "react";
 import api from "@/utils/api";
-import { useCreateTaskMutation } from "@/store/taskStore";
+import {
+  useCreateNLPTaskMutation,
+  useCreateTaskMutation,
+} from "@/store/taskStore";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -46,30 +49,48 @@ export function NewTaskModal() {
   const [description, setDescription] = useState("");
   const [priority, setPriority] = useState<string>("");
   const [date, setDate] = useState<Date>();
-  const [isProcessing, setIsProcessing] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const { mutate: createNLPTask, isPending: isNLPProcessing } =
+    useCreateNLPTaskMutation();
 
-  const { mutate: createTask } = useCreateTaskMutation();
+  const { mutate: createTask, isPending: isProcessing } =
+    useCreateTaskMutation();
 
-  const handleNlpSubmit = async () => {
-    setIsProcessing(true);
+  // const handleNlpSubmit = async () => {
+  //   setIsProcessing(true);
+  //   setErrorMessage(null);
+
+  //   try {
+  //     const response = await api.post("/create-from-nlp", {
+  //       command: nlpInput,
+  //     });
+  //     console.log("NLP Task created:", response.data);
+  //     // Reset the input and close the dialog
+  //     setNlpInput("");
+  //   } catch (error: any) {
+  //     const errorResponse =
+  //       error?.response?.data?.message || "Failed to create task using  AI.";
+  //     setErrorMessage(errorResponse);
+  //   } finally {
+  //     setIsProcessing(false);
+  //     setOpen(false);
+  //   }
+  // };
+
+  const handleNlpSubmit = () => {
     setErrorMessage(null);
 
-    try {
-      const response = await api.post("/create-from-nlp", {
-        command: nlpInput,
-      });
-      console.log("NLP Task created:", response.data);
-      // Reset the input and close the dialog
-      setNlpInput("");
-    } catch (error: any) {
-      const errorResponse =
-        error?.response?.data?.message || "Failed to create task using  AI.";
-      setErrorMessage(errorResponse);
-    } finally {
-      setIsProcessing(false);
-      setOpen(false);
-    }
+    createNLPTask(nlpInput, {
+      onSuccess: () => {
+        setNlpInput("");
+        setOpen(false);
+      },
+      onError: (error: any) => {
+        const errorResponse =
+          error?.response?.data?.message || "Failed to create task using AI.";
+        setErrorMessage(errorResponse);
+      },
+    });
   };
 
   const handleManualSubmit = () => {
@@ -105,7 +126,7 @@ export function NewTaskModal() {
 
   const handleSubmit = async () => {
     if (isNlpMode) {
-      await handleNlpSubmit();
+      handleNlpSubmit();
     } else {
       handleManualSubmit();
     }
@@ -154,7 +175,7 @@ export function NewTaskModal() {
                 <p className="text-red-500 text-sm">{errorMessage}</p>
               )}
               <Button onClick={handleSubmit} disabled={isProcessing}>
-                {isProcessing ? (
+                {isNLPProcessing ? (
                   <>
                     <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                     Processing

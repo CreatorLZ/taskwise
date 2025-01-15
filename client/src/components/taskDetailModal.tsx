@@ -12,7 +12,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Progress } from "@/components/ui/progress";
 import { Badge } from "@/components/ui/badge";
-import { Calendar, Sparkles, Trash2 } from "lucide-react";
+import { Calendar, Loader, Loader2, Sparkles, Trash2 } from "lucide-react";
 import {
   Select,
   SelectContent,
@@ -31,6 +31,7 @@ interface Task {
   description: string;
   category: string;
   priority: string;
+  previousPriority?: string;
   progress: number;
   dueDate: string;
   aiOptimized: boolean;
@@ -68,10 +69,27 @@ export function TaskDetailModal({
   // Handle marking task as complete
   const handleMarkComplete = async () => {
     try {
-      await updateTaskMutation.mutateAsync({
-        taskId: task._id,
-        updates: { completed: !task.completed },
-      });
+      if (!task.completed) {
+        // When marking as complete, store the current priority
+        await updateTaskMutation.mutateAsync({
+          taskId: task._id,
+          updates: {
+            completed: true,
+            previousPriority: task.priority, // Store current priority
+            priority: "Completed",
+          },
+        });
+      } else {
+        // When marking as incomplete, restore the previous priority or default to "Medium"
+        await updateTaskMutation.mutateAsync({
+          taskId: task._id,
+          updates: {
+            completed: false,
+            priority: task.previousPriority || "Medium",
+            previousPriority: undefined, // Clear the stored priority
+          },
+        });
+      }
     } catch (error) {
       console.error("Failed to update task completion status:", error);
     }
@@ -98,8 +116,9 @@ export function TaskDetailModal({
   };
 
   // Check if any mutation is in progress
-  const isProcessing =
-    updateTaskMutation.isPending || deleteTaskMutation.isPending;
+  const isProcessingUpdate = updateTaskMutation.isPending;
+
+  const isProcessingDelete = deleteTaskMutation.isPending;
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
@@ -261,13 +280,21 @@ export function TaskDetailModal({
                 <Button
                   onClick={handleSave}
                   className="mt-3"
-                  disabled={isProcessing}
+                  disabled={isProcessingUpdate || isProcessingDelete}
                 >
-                  Save Changes
+                  {isProcessingUpdate || isProcessingDelete ? (
+                    <Loader className="mr-2 h-4 w-4 animate-spin" />
+                  ) : (
+                    " Save Changes"
+                  )}
                 </Button>
               </>
             ) : (
-              <Button variant="outline" onClick={() => setIsEditing(true)}>
+              <Button
+                variant="outline"
+                onClick={() => setIsEditing(true)}
+                disabled={isProcessingUpdate || isProcessingDelete}
+              >
                 Edit Task
               </Button>
             )}
@@ -276,19 +303,32 @@ export function TaskDetailModal({
             <Button
               variant="destructive"
               onClick={handleDelete}
-              disabled={isProcessing}
+              disabled={isProcessingUpdate || isProcessingDelete}
               className=""
             >
-              <Trash2 className="w-4 h-4 mr-2" />
-              Delete
+              {isProcessingDelete ? (
+                <>
+                  Deleting
+                  <Loader className="mr-2 h-4 w-4 animate-spin" />{" "}
+                </>
+              ) : (
+                <>
+                  <Trash2 className="w-4 h-4 mr-2" /> Delete
+                </>
+              )}
             </Button>
             <Button
               variant={task.completed ? "secondary" : "default"}
               onClick={handleMarkComplete}
-              disabled={isProcessing}
+              disabled={isProcessingUpdate || isProcessingDelete}
               className=""
             >
               {task.completed ? "Mark Incomplete" : "Mark Complete"}
+              {isProcessingUpdate ? (
+                <Loader className="mr-2 h-4 w-4 animate-spin" />
+              ) : (
+                ""
+              )}
             </Button>
             {!isEditing && (
               <Button
