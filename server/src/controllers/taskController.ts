@@ -32,8 +32,10 @@ export const getTasksByUserId = asyncHandler(
 
       return {
         ...task.toObject(),
+        //we need to make sure specific time in the day the task is to be completed is set along side the date i.e the dueDate
         dueDate: format(new Date(task.dueDate), "yyyy-MM-dd"),
         dueTime: formatDistanceToNow(new Date(task.dueDate), {
+          //find a way to get the exact time from the due date
           addSuffix: true,
         }),
         startDate: format(new Date(createdAt), "yyyy-MM-dd"),

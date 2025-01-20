@@ -13,3 +13,4 @@ function calculateTimeProgress(startDate: string, dueDate: string): number {
 }
 
 export default calculateTimeProgress;
+// find out exactly what this does and find a way to calculate exact time e.g 7pm 5pm
