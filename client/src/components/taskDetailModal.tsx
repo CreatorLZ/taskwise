@@ -2,7 +2,6 @@ import { useState } from "react";
 import {
   Dialog,
   DialogContent,
-  DialogDescription,
   DialogHeader,
   DialogTitle,
   DialogFooter,
@@ -12,7 +11,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Progress } from "@/components/ui/progress";
 import { Badge } from "@/components/ui/badge";
-import { Calendar, Loader, Loader2, Sparkles, Trash2 } from "lucide-react";
+import { Calendar, Loader, Sparkles, Trash2 } from "lucide-react";
 import {
   Select,
   SelectContent,
@@ -142,18 +141,6 @@ export function TaskDetailModal({
               </>
             )}
           </DialogTitle>
-          <DialogDescription className="flex justify-start">
-            {isEditing ? (
-              <Input
-                value={editedTask.category}
-                onChange={(e) =>
-                  setEditedTask({ ...editedTask, category: e.target.value })
-                }
-              />
-            ) : (
-              task.category
-            )}
-          </DialogDescription>
         </DialogHeader>
         <div className="grid gap-4 py-4">
           {/* Description */}
@@ -226,26 +213,7 @@ export function TaskDetailModal({
           <div className="space-y-2">
             <div className="flex justify-between text-sm font-medium">
               <span>Time elapsed</span>
-              <span>
-                {/* {isEditing ? (
-                  <Input
-                    type="number"
-                    min="0"
-                    max="100"
-                    value={editedTask.progress}
-                    onChange={(e) =>
-                      setEditedTask({
-                        ...editedTask,
-                        progress: parseInt(e.target.value) || 0,
-                      })
-                    }
-                    className="w-16 text-right"
-                  />
-                ) : (
-                  `${task.progress}%`
-                )} */}
-                {task.progress}%
-              </span>
+              <span>{task.progress}%</span>
             </div>
             <Progress
               value={isEditing ? editedTask.progress : task.progress}
@@ -283,7 +251,10 @@ export function TaskDetailModal({
                   disabled={isProcessingUpdate || isProcessingDelete}
                 >
                   {isProcessingUpdate || isProcessingDelete ? (
-                    <Loader className="mr-2 h-4 w-4 animate-spin" />
+                    <>
+                      Saving
+                      <Loader className="mr-2 h-4 w-4 animate-spin" />
+                    </>
                   ) : (
                     " Save Changes"
                   )}
@@ -308,8 +279,7 @@ export function TaskDetailModal({
             >
               {isProcessingDelete ? (
                 <>
-                  Deleting
-                  <Loader className="mr-2 h-4 w-4 animate-spin" />{" "}
+                  <Loader className="mr-2 h-4 w-4 animate-spin" /> Deleting
                 </>
               ) : (
                 <>

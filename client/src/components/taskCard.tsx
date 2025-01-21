@@ -2,7 +2,7 @@ import React, { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
 import { TaskDetailModal } from "@/components/taskDetailModal";
-import { CheckCircle2, Circle, Clock, Hourglass, Sparkles } from "lucide-react";
+import { CheckCircle2, Circle, Clock, Sparkles } from "lucide-react";
 
 // Define the types for the component props
 interface TaskCardProps {
@@ -79,7 +79,7 @@ export const TaskCard: React.FC<TaskCardProps> = ({
                   className={`w-4 h-4 mt-1 ${
                     progress <= 33
                       ? "text-emerald-400"
-                      : progress <= 66
+                      : progress <= 90
                       ? "text-amber-400"
                       : "text-rose-500"
                   }`}
