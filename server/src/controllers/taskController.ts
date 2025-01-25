@@ -15,6 +15,7 @@ export const getTasksByUserId = asyncHandler(
     }
 
     const tasks = await Task.find({ userId }).sort({
+      createdAt: -1,
       priority: -1,
       dueDate: 1,
     });
