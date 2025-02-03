@@ -4,6 +4,7 @@ import asyncHandler from "express-async-handler";
 import { format, formatDistanceToNow } from "date-fns";
 import calculateTimeProgress from "../utils/calculateTimeProgress";
 import mongoose from "mongoose";
+import { create } from "axios";
 
 // Get all tasks for a specific user with formatted dueTime
 export const getTasksByUserId = asyncHandler(
@@ -33,12 +34,11 @@ export const getTasksByUserId = asyncHandler(
 
       return {
         ...task.toObject(),
-        //we need to make sure specific time in the day the task is to be completed is set along side the date i.e the dueDate
-        dueDate: format(new Date(task.dueDate), "yyyy-MM-dd"),
+        dueDate: task.dueDate.toISOString(),
         dueTime: formatDistanceToNow(new Date(task.dueDate), {
-          //find a way to get the exact time from the due date
           addSuffix: true,
         }),
+        formattedDueDate: format(new Date(task.dueDate), "MMM d, yyyy h:mm a"),
         startDate: format(new Date(createdAt), "yyyy-MM-dd"),
         progress,
       };
@@ -59,17 +59,19 @@ export const createTask = asyncHandler(async (req: Request, res: Response) => {
   const taskData = {
     ...req.body,
     userId: (req as any).user.id,
+    dueDate: new Date(req.body.dueDate),
   };
 
   const task = await Task.create(taskData);
-  const createdAt = task.createdAt ?? new Date(); // Ensure `createdAt` is handled
+  const createdAt = task.createdAt ?? new Date();
 
   res.status(201).json({
     ...task.toObject(),
-    dueDate: format(new Date(task.dueDate), "yyyy-MM-dd"),
+    dueDate: task.dueDate.toISOString(),
     dueTime: formatDistanceToNow(new Date(task.dueDate), {
       addSuffix: true,
     }),
+    formattedDueDate: format(new Date(task.dueDate), "MMM d, yyyy h:mm a"),
     startDate: format(new Date(createdAt), "yyyy-MM-dd"),
     progress: calculateTimeProgress(
       createdAt.toISOString(),

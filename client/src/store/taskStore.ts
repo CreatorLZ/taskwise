@@ -12,6 +12,7 @@ export interface Task {
   progress: number;
   dueTime: string;
   dueDate: string;
+  formattedDueDate: string;
   description: string;
   status: string;
   completed?: boolean;
