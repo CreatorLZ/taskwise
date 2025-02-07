@@ -21,7 +21,6 @@ export const analyzeAndPrioritizeTasks = async (userId: string) => {
     const tasks = await Task.find({
       userId,
       completed: false,
-      dueDate: { $gte: currentDate },
     });
 
     if (tasks.length === 0) {
@@ -43,7 +42,7 @@ export const analyzeAndPrioritizeTasks = async (userId: string) => {
         Due Date: ${dueDate.toISOString()}
         Guidelines:
         - Recommend "low", "medium", "completed" or "high" for priority.
-        - Adjust task status based on due date and urgency.
+        - Adjust task status and priority based on due date and urgency.
         - Provide a reason for any suggested changes.
         - Use ${currentDate.toISOString()} as the reference date.
       `;
@@ -56,7 +55,7 @@ export const analyzeAndPrioritizeTasks = async (userId: string) => {
           {
             role: "system",
             content: `
-              You are an advanced task analyzer. Given task details, recommend changes to priority/status with explanations.make sure to always change priority to completed if status shows completed
+              You are an advanced task analyzer. Given task details, recommend changes to priority/status with explanations. if the Due Date of a task is in the past i.e if the due date is less than the reference date, it is a must! that you change the priority to high and status to pending.
               Always respond with valid JSON in this schema:
               {
                 "newPriority": "Low" | "Medium" | "High" | "Completed",
@@ -76,6 +75,7 @@ export const analyzeAndPrioritizeTasks = async (userId: string) => {
           const newContent = chunk.choices[0].delta.content;
           output += newContent;
           console.log("Streaming Output:", newContent);
+          // console.log("today is", currentDate.toISOString());
         }
       }
 

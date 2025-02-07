@@ -1,4 +1,5 @@
 import { useCallback, useMemo, useState } from "react";
+import { Button } from "@/components/ui/button";
 import {
   Card,
   CardContent,
@@ -19,10 +20,8 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   Brain,
   CheckCircle2,
-  // Circle,
   Clock,
   ListTodo,
-  // Plus,
   Sparkles,
   Star,
   TrendingUp,
@@ -31,7 +30,10 @@ import { NewTaskModal } from "@/components/ui/newTask";
 import { TaskCard } from "@/components/taskCard";
 
 import useAuthStore from "@/store/authstore";
-import useTaskStore, { useFetchTasks } from "@/store/taskStore";
+import useTaskStore, {
+  useAIPrioritizeTasksMutation,
+  useFetchTasks,
+} from "@/store/taskStore";
 import TaskSkeletonLoader from "@/components/taskSkeletonLoader";
 import EmptyTaskState from "@/components/emptyTasksState";
 
@@ -40,6 +42,8 @@ export default function TaskDashboard() {
   const [taskFilter, setTaskFilter] = useState<"all" | "today" | "upcoming">(
     "all"
   );
+  const [inProgressTasksToShow, setInProgressTasksToShow] = useState(5);
+  const [completedTasksToShow, setCompletedTasksToShow] = useState(5);
 
   const user = useAuthStore((state) => state.user);
   const userId = useAuthStore((state) => state.userId);
@@ -49,8 +53,8 @@ export default function TaskDashboard() {
 
   const tasks = useTaskStore((state) => state.tasks) ?? [];
 
-  console.log(user);
-  console.log(tasks);
+  // console.log(user);
+  // console.log(tasks);
   interface Task {
     _id: string;
     title: string;
@@ -66,7 +70,7 @@ export default function TaskDashboard() {
 
   // Memoize the filterTasks function
   const filterTasks = useCallback(
-    (tasks: Task[], completed: boolean = false): Task[] => {
+    (tasks: Task[], completed = false): Task[] => {
       if (!Array.isArray(tasks)) {
         console.warn("Tasks is not an array:", tasks);
         return [];
@@ -74,7 +78,7 @@ export default function TaskDashboard() {
 
       const today = new Date().toISOString().split("T")[0];
 
-      return tasks.filter((task: Task) => {
+      const filteredTasks = tasks.filter((task: Task) => {
         if (!task) return false;
 
         const isCompletedMatch = completed
@@ -93,9 +97,37 @@ export default function TaskDashboard() {
             return isCompletedMatch;
         }
       });
+
+      // Use different counts based on completed status
+      const tasksToShow = completed
+        ? completedTasksToShow
+        : inProgressTasksToShow;
+      return filteredTasks.slice(0, tasksToShow);
     },
-    [taskFilter, tasks]
+    [taskFilter, inProgressTasksToShow, completedTasksToShow]
   ); // Only recreate when taskFilter changes
+
+  // Get the total number of tasks for each category
+  const totalInProgressTasks = useMemo(
+    () =>
+      tasks.filter(
+        (task) =>
+          !task.completed &&
+          ["Pending", "In-progress", "pending", "in-progress"].includes(
+            task.status
+          )
+      ).length,
+    [tasks]
+  );
+
+  const totalCompletedTasks = useMemo(
+    () =>
+      tasks.filter(
+        (task) =>
+          task.completed || ["completed", "Completed"].includes(task.status)
+      ).length,
+    [tasks]
+  );
 
   // Memoize the filtered results
   const filteredInProgressTasks = useMemo(
@@ -108,10 +140,15 @@ export default function TaskDashboard() {
     [tasks, filterTasks]
   );
 
-  // Early returns for loading and error states
-  // if (!userId) return <div>Please log in to view your tasks.</div>;
-  // if (error) return <div>Error loading tasks. Please try again.</div>;
+  const handleLoadMoreInProgress = () => {
+    setInProgressTasksToShow((prev) => prev + 5);
+  };
 
+  const handleLoadMoreCompleted = () => {
+    setCompletedTasksToShow((prev) => prev + 5);
+  };
+
+  const aiPrioritizeMutation = useAIPrioritizeTasksMutation();
   return (
     <div className="min-h-screen bg-background text-foreground">
       <div className="bg-gradient-to-br from-primary/5 via-background to-primary/5 p-6">
@@ -142,7 +179,12 @@ export default function TaskDashboard() {
                   <Switch
                     id="prioritization"
                     checked={prioritizationEnabled}
-                    onCheckedChange={setPrioritizationEnabled}
+                    onCheckedChange={(checked) => {
+                      setPrioritizationEnabled(checked);
+                      if (checked) {
+                        aiPrioritizeMutation.mutate(userId!);
+                      }
+                    }}
                   />
                   <label
                     htmlFor="prioritization"
@@ -246,10 +288,23 @@ export default function TaskDashboard() {
                             description={task.description}
                           />
                         ))}
-                        {filteredInProgressTasks.length === 0 && (
+                        {filteredInProgressTasks.length === 0 ? (
                           <p className="text-muted-foreground">
                             No tasks found.
                           </p>
+                        ) : (
+                          filteredInProgressTasks.length <
+                            totalInProgressTasks && (
+                            <div className="flex justify-center mt-4">
+                              <Button
+                                variant="outline"
+                                onClick={handleLoadMoreInProgress}
+                                className="w-full max-w-xs"
+                              >
+                                Load More In-Progress Tasks
+                              </Button>
+                            </div>
+                          )
                         )}
                       </TabsContent>
                       <TabsContent value="completed" className="space-y-4">
@@ -268,10 +323,23 @@ export default function TaskDashboard() {
                             description={task.description}
                           />
                         ))}
-                        {filteredCompletedTasks.length === 0 && (
+                        {filteredCompletedTasks.length === 0 ? (
                           <p className="text-muted-foreground">
                             No completed tasks found.
                           </p>
+                        ) : (
+                          filteredCompletedTasks.length <
+                            totalCompletedTasks && (
+                            <div className="flex justify-center mt-4">
+                              <Button
+                                variant="outline"
+                                onClick={handleLoadMoreCompleted}
+                                className="w-full max-w-xs"
+                              >
+                                Load More Completed Tasks
+                              </Button>
+                            </div>
+                          )
                         )}
                       </TabsContent>
                     </>
@@ -304,22 +372,24 @@ export default function TaskDashboard() {
                     <StatCard
                       icon={<CheckCircle2 className="w-4 h-4 text-green-500" />}
                       label="Completed"
-                      value="24"
+                      value={totalCompletedTasks}
                     />
                     <StatCard
                       icon={<Clock className="w-4 h-4 text-blue-500" />}
                       label="In Progress"
-                      value="12"
+                      value={totalInProgressTasks}
                     />
                     <StatCard
                       icon={<ListTodo className="w-4 h-4 text-primary" />}
                       label="Total Tasks"
-                      value="36"
+                      value={tasks.length}
                     />
                     <StatCard
-                      icon={<Star className="w-4 h-4 text-yellow-500" />}
+                      icon={<Star className="w-4 h-4 text-rose-500" />}
                       label="Priority"
-                      value="8"
+                      value={
+                        tasks.filter((task) => task.priority === "High").length
+                      }
                     />
                   </div>
                 </div>
@@ -339,7 +409,7 @@ function StatCard({
 }: {
   icon: React.ReactNode;
   label: string;
-  value: string;
+  value: number | string;
 }) {
   return (
     <div className="p-4 rounded-lg border bg-card">

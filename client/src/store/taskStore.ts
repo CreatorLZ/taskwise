@@ -177,3 +177,29 @@ export function useDeleteTaskMutation() {
     },
   });
 }
+
+export function useAIPrioritizeTasksMutation() {
+  const queryClient = useQueryClient();
+  const setTasks = useTaskStore((state) => state.setTasks);
+
+  return useMutation({
+    mutationFn: async (userId: string) => {
+      const response = await api.post("/prioritize-tasks", { userId });
+      return response.data as Task[];
+    },
+    onSuccess: (updatedTasks) => {
+      // Invalidate and refetch
+      queryClient.invalidateQueries({
+        queryKey: ["tasks"],
+      });
+
+      // Update Zustand store with updated tasks
+      setTasks(updatedTasks);
+      console.log(updatedTasks + " updated");
+    },
+    onError: (error) => {
+      console.error("Error with AI task prioritization:", error);
+      throw error; // Propagate error to component
+    },
+  });
+}

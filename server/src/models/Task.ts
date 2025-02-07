@@ -28,12 +28,12 @@ interface ITask extends Document {
 const PriorityLogSchema: Schema = new Schema({
   oldPriority: {
     type: String,
-    enum: ["Low", "Medium", "High"],
+    enum: ["Low", "Medium", "High", "Completed"],
     required: true,
   },
   newPriority: {
     type: String,
-    enum: ["Low", "Medium", "High"],
+    enum: ["Low", "Medium", "High", "Completed"],
     required: true,
   },
   reason: { type: String, required: true },

@@ -88,6 +88,7 @@ export function TaskDetailModal({
             completed: true,
             previousPriority: task.priority,
             priority: "Completed",
+            status: "Completed",
           },
         });
       } else {
@@ -97,6 +98,7 @@ export function TaskDetailModal({
             completed: false,
             priority: task.previousPriority || "Medium",
             previousPriority: undefined,
+            status: "Pending",
           },
         });
       }
