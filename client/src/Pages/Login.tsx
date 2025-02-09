@@ -17,6 +17,8 @@ import api from "@/utils/api";
 import useAuthStore from "@/store/authstore";
 import { useQueryClient } from "@tanstack/react-query";
 import useTaskStore from "@/store/taskStore";
+import { getMessaging, getToken } from "firebase/messaging";
+import { messaging } from "@/firebase.tsx";
 
 export default function LoginPage() {
   const [isLoading, setIsLoading] = useState(false);
@@ -32,6 +34,34 @@ export default function LoginPage() {
   const setToken = useAuthStore((state) => state.setToken);
   const setTasks = useTaskStore((state) => state.setTasks);
 
+  const setupNotifications = async (userId: string, authToken: string) => {
+    try {
+      const permission = await Notification.requestPermission();
+      if (permission === "granted") {
+        const fcmToken = await getToken(messaging, {
+          vapidKey: import.meta.env.VITE_FIREBASE_VAPID_KEY as string,
+        });
+
+        // Update FCM token in backend
+        await api.put(
+          "/users/update-fcm-token",
+          {
+            userId,
+            fcmToken,
+          },
+          {
+            headers: {
+              Authorization: `Bearer ${authToken}`,
+            },
+          }
+        );
+      }
+    } catch (error) {
+      console.error("Error setting up notifications:", error);
+      // Don't block the login process if notification setup fails
+    }
+  };
+
   const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     setIsLoading(true);
@@ -44,6 +74,9 @@ export default function LoginPage() {
       setUser(user);
       setToken(token);
       setUserId(userId);
+
+      // Setup notifications after successful login
+      await setupNotifications(userId, token);
 
       const clearTasks = useTaskStore.getState().clearTasks;
       clearTasks();

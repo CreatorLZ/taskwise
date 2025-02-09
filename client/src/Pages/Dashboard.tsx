@@ -53,7 +53,7 @@ export default function TaskDashboard() {
 
   const tasks = useTaskStore((state) => state.tasks) ?? [];
 
-  // console.log(user);
+  console.log(user);
   // console.log(tasks);
   interface Task {
     _id: string;
@@ -110,22 +110,26 @@ export default function TaskDashboard() {
   // Get the total number of tasks for each category
   const totalInProgressTasks = useMemo(
     () =>
-      tasks.filter(
-        (task) =>
-          !task.completed &&
-          ["Pending", "In-progress", "pending", "in-progress"].includes(
-            task.status
-          )
-      ).length,
+      !tasks || !Array.isArray(tasks)
+        ? 0
+        : tasks.filter(
+            (task) =>
+              !task.completed &&
+              ["Pending", "In-progress", "pending", "in-progress"].includes(
+                task.status
+              )
+          ).length,
     [tasks]
   );
 
   const totalCompletedTasks = useMemo(
     () =>
-      tasks.filter(
-        (task) =>
-          task.completed || ["completed", "Completed"].includes(task.status)
-      ).length,
+      !tasks || !Array.isArray(tasks)
+        ? 0
+        : tasks.filter(
+            (task) =>
+              task.completed || ["completed", "Completed"].includes(task.status)
+          ).length,
     [tasks]
   );
 
@@ -301,7 +305,7 @@ export default function TaskDashboard() {
                                 onClick={handleLoadMoreInProgress}
                                 className="w-full max-w-xs"
                               >
-                                Load More In-Progress Tasks
+                                Load More
                               </Button>
                             </div>
                           )
@@ -336,7 +340,7 @@ export default function TaskDashboard() {
                                 onClick={handleLoadMoreCompleted}
                                 className="w-full max-w-xs"
                               >
-                                Load More Completed Tasks
+                                Load More
                               </Button>
                             </div>
                           )
@@ -388,7 +392,10 @@ export default function TaskDashboard() {
                       icon={<Star className="w-4 h-4 text-rose-500" />}
                       label="Priority"
                       value={
-                        tasks.filter((task) => task.priority === "High").length
+                        !tasks || !Array.isArray(tasks)
+                          ? 0
+                          : tasks.filter((task) => task.priority === "High")
+                              .length
                       }
                     />
                   </div>

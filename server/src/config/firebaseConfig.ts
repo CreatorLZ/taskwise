@@ -1,14 +1,16 @@
 import * as admin from "firebase-admin";
-import path from "path";
+import dotenv from "dotenv";
 
-// Import the service account JSON securely using an absolute path
-const serviceAccount = require(path.resolve(
-  __dirname,
-  "../firebase/adminsdk.json"
-));
+dotenv.config();
 
-admin.initializeApp({
-  credential: admin.credential.cert(serviceAccount),
-});
+if (!admin.apps.length) {
+  admin.initializeApp({
+    credential: admin.credential.cert({
+      projectId: process.env.FIREBASE_PROJECT_ID,
+      clientEmail: process.env.FIREBASE_CLIENT_EMAIL,
+      privateKey: process.env.FIREBASE_PRIVATE_KEY?.replace(/\\n/g, "\n"),
+    }),
+  });
+}
 
 export default admin;

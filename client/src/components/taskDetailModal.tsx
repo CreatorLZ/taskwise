@@ -21,7 +21,12 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Progress } from "@/components/ui/progress";
 import { Badge } from "@/components/ui/badge";
-import { Calendar, Loader, Sparkles, Trash2 } from "lucide-react";
+import {
+  Calendar as CalendarIcon,
+  Loader,
+  Sparkles,
+  Trash2,
+} from "lucide-react";
 import {
   Select,
   SelectContent,
@@ -34,6 +39,8 @@ import {
   useUpdateTaskMutation,
 } from "@/store/taskStore";
 import { format } from "date-fns";
+import { Calendar } from "@/components/ui/calendar";
+import { cn } from "@/lib/utils";
 
 interface Task {
   _id: string;
@@ -62,6 +69,11 @@ export function TaskDetailModal({
   const [isEditing, setIsEditing] = useState(false);
   const [editedTask, setEditedTask] = useState<Task>(task);
   const [showDeleteAlert, setShowDeleteAlert] = useState(false);
+  const [showCalendar, setShowCalendar] = useState(false);
+  const [date, setDate] = useState<Date>(new Date(task.dueDate));
+  const [time, setTime] = useState<string>(
+    format(new Date(task.dueDate), "HH:mm")
+  );
 
   // Use the mutation hooks
   const updateTaskMutation = useUpdateTaskMutation();
@@ -110,6 +122,11 @@ export function TaskDetailModal({
   // Handle saving edited task
   const handleSave = async () => {
     try {
+      // Combine date and time
+      const combinedDateTime = new Date(date);
+      const [hours, minutes] = time.split(":").map(Number);
+      combinedDateTime.setHours(hours, minutes, 0, 0);
+
       await updateTaskMutation.mutateAsync({
         taskId: task._id,
         updates: {
@@ -118,7 +135,7 @@ export function TaskDetailModal({
           category: editedTask.category,
           priority: editedTask.priority,
           progress: editedTask.progress,
-          dueDate: editedTask.dueDate,
+          dueDate: combinedDateTime.toISOString(),
         },
       });
       setIsEditing(false);
@@ -134,7 +151,7 @@ export function TaskDetailModal({
   return (
     <>
       <Dialog open={isOpen} onOpenChange={onClose}>
-        <DialogContent className="max-w-[100vw] sm:max-w-[550px] overflow-y-auto max-h-[90vh] pt-8">
+        <DialogContent className="max-w-[100vw] sm:max-w-[600px] overflow-y-auto max-h-[90vh] pt-8">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
               {isEditing ? (
@@ -212,37 +229,46 @@ export function TaskDetailModal({
               )}
               <div className="flex items-center text-sm text-muted-foreground">
                 {isEditing ? (
-                  <div className="flex gap-2 items-center">
-                    <Input
-                      type="date"
-                      value={editedTask.dueDate.split("T")[0]}
-                      onChange={(e) =>
-                        setEditedTask({
-                          ...editedTask,
-                          dueDate: `${e.target.value}T${
-                            editedTask.dueDate.split("T")[1] || "23:59"
-                          }`,
-                        })
-                      }
-                    />
+                  <div className="flex gap-4 items-center relative">
+                    <Button
+                      variant="outline"
+                      className={cn(
+                        "w-[200px] justify-start text-left font-normal",
+                        !date && "text-muted-foreground"
+                      )}
+                      onClick={() => setShowCalendar(!showCalendar)}
+                      type="button"
+                    >
+                      <CalendarIcon className="mr-2 h-4 w-4" />
+                      {date ? format(date, "PPP") : <span>Pick a date</span>}
+                    </Button>
                     <Input
                       type="time"
-                      value={
-                        editedTask.dueDate.split("T")[1]?.slice(0, 5) || "23:59"
-                      }
-                      onChange={(e) =>
-                        setEditedTask({
-                          ...editedTask,
-                          dueDate: `${editedTask.dueDate.split("T")[0]}T${
-                            e.target.value
-                          }:00`,
-                        })
-                      }
+                      value={time}
+                      onChange={(e) => setTime(e.target.value)}
+                      className="w-[115px] sm:w-[120px]"
                     />
+                    {showCalendar && (
+                      <Calendar
+                        mode="single"
+                        selected={date}
+                        onSelect={(selectedDate) => {
+                          if (selectedDate) {
+                            setDate(selectedDate);
+                            setShowCalendar(false);
+                          }
+                        }}
+                        disabled={(date) =>
+                          date < new Date(new Date().setHours(0, 0, 0, 0))
+                        }
+                        initialFocus
+                        className="sm:absolute sm:bottom-[-45px] sm:left-[-18px] absolute bottom-12 left-0 rounded-md border bg-popover p-1 shadow-md z-50  text-xs"
+                      />
+                    )}
                   </div>
                 ) : (
                   <div className="flex items-center text-sm text-muted-foreground">
-                    <Calendar className="mr-2 h-4 w-4" />
+                    <CalendarIcon className="mr-2 h-4 w-4" />
                     {`Due ${format(
                       new Date(task.dueDate),
                       "MMM d, yyyy h:mm a"

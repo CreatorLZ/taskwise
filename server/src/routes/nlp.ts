@@ -15,11 +15,14 @@ router.post(
       return res.status(400).json({ message: "No command provided" });
     }
 
+    // Add prefix to the command
+    const prefixedCommand = `create a task to ${command}`;
+
     // Extract user ID
     const userId = (req as any).user.id;
 
     // Call the utility function and pass userId and command
-    const createdTask = await createTaskFromNLP(command, userId);
+    const createdTask = await createTaskFromNLP(prefixedCommand, userId);
     return res.status(201).json(createdTask);
   })
 );

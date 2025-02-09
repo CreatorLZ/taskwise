@@ -1,10 +1,27 @@
 import { Request, Response } from "express";
 import Task from "../models/Task";
 import asyncHandler from "express-async-handler";
-import { format, formatDistanceToNow } from "date-fns";
+import {
+  format,
+  formatDistanceToNow,
+  isValid,
+  parseISO,
+  subMinutes,
+} from "date-fns";
 import calculateTimeProgress from "../utils/calculateTimeProgress";
 import mongoose from "mongoose";
-import { create } from "axios";
+
+const calculateReminderTime = (dueDate: Date): Date => {
+  return new Date(dueDate.getTime() - 10 * 60000);
+};
+
+const validateAndParseDate = (dateString: string): Date => {
+  const parsedDate = parseISO(dateString);
+  if (!isValid(parsedDate)) {
+    throw new Error("Invalid date format provided");
+  }
+  return parsedDate;
+};
 
 // Get all tasks for a specific user with formatted dueTime
 export const getTasksByUserId = asyncHandler(
@@ -56,10 +73,15 @@ export const getAllTasks = asyncHandler(async (req: Request, res: Response) => {
 
 //create a new task
 export const createTask = asyncHandler(async (req: Request, res: Response) => {
+  const dueDate = new Date(req.body.dueDate);
+  const reminderTime = calculateReminderTime(dueDate);
+
   const taskData = {
     ...req.body,
     userId: (req as any).user.id,
-    dueDate: new Date(req.body.dueDate),
+    dueDate: dueDate,
+    reminderTime: reminderTime,
+    notificationSent: false,
   };
 
   const task = await Task.create(taskData);
@@ -92,7 +114,20 @@ export const getTaskById = asyncHandler(
 // Update a task by ID
 export const updateTask = asyncHandler(
   async (req: Request, res: Response): Promise<void | any> => {
-    const task = await Task.findByIdAndUpdate(req.params.id, req.body, {
+    let updates = { ...req.body };
+
+    // If due date is being updated, recalculate reminder time
+    if (req.body.dueDate) {
+      const dueDate = validateAndParseDate(req.body.dueDate);
+      updates = {
+        ...updates,
+        dueDate,
+        reminderTime: calculateReminderTime(dueDate),
+        // Reset notification flag when due date is updated
+        notificationSent: false,
+      };
+    }
+    const task = await Task.findByIdAndUpdate(req.params.id, updates, {
       new: true,
       runValidators: true,
     });

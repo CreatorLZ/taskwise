@@ -118,10 +118,6 @@ export function NewTaskModal() {
     }
   };
 
-  // const handleDateSelect = (selectedDate: Date | undefined) => {
-  //   setDate(selectedDate);
-  // };
-
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
@@ -241,7 +237,9 @@ export function NewTaskModal() {
                             setDate(selectedDate);
                             setShowCalendar(false);
                           }}
-                          disabled={(date) => date < new Date()}
+                          disabled={(date) =>
+                            date < new Date(new Date().setHours(0, 0, 0, 0))
+                          }
                           fromDate={new Date()}
                           initialFocus
                         />

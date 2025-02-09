@@ -29,7 +29,7 @@ export const createTaskFromNLP = async (command: string, userId: string) => {
             "priority": "Low" | "Medium" | "High" | "Completed"
             "dueDate": "ISO date string",
             "status": "Pending" | "In-progress" | "Completed",
-            "reminderTime": "ISO date string (optional)",
+            "reminderTime": "ISO date string ten minutes before dueDate",
             "userId": "${userId}"
           }
           Ensure:

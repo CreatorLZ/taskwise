@@ -23,6 +23,7 @@ interface ITask extends Document {
   createdAt: Date;
   updatedAt: Date;
   progress: Number;
+  notificationSent: boolean;
 }
 
 const PriorityLogSchema: Schema = new Schema({
@@ -64,7 +65,12 @@ const TaskSchema: Schema = new Schema(
     userId: { type: Types.ObjectId, required: true },
     retouchedByAI: { type: Boolean, default: false }, // Indicates if AI has modified the task
     priorityLogs: { type: [PriorityLogSchema], default: [] }, // Stores priority change history
+    notificationSent: {
+      type: Boolean,
+      default: false,
+    }, // Indicates if a reminder notification has been sent
   },
+
   { timestamps: true }
 );
 
