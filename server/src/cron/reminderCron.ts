@@ -1,7 +1,6 @@
 import cron from "node-cron";
 import Task from "../models/Task";
 import { sendPushNotification } from "../utils/notificationUtils";
-import User from "../models/User";
 import nodemailer from "nodemailer";
 import { addMinutes } from "date-fns";
 
@@ -9,9 +8,20 @@ import { addMinutes } from "date-fns";
 const transporter = nodemailer.createTransport({
   service: "gmail", // For example, using Gmail SMTP
   auth: {
-    user: process.env.EMAIL_USER, //  email address
-    pass: process.env.EMAIL_PASS, // email password or app-specific password
+    // user: process.env.EMAIL_USER, //  email address
+    // pass: process.env.EMAIL_PASS, // email password or app-specific password
+    user: "anyimworkspace@gmail.com",
+    pass: "otia aovt ujqx gins",
   },
+});
+
+// Test the connection when your server starts
+transporter.verify(function (error, success) {
+  if (error) {
+    console.log("Email server error:", error);
+  } else {
+    console.log("Email server is ready to send messages");
+  }
 });
 
 // Utility function to send email notifications

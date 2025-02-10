@@ -62,7 +62,7 @@ const TaskSchema: Schema = new Schema(
       default: "Pending",
     },
     reminderTime: { type: Date },
-    userId: { type: Types.ObjectId, required: true },
+    userId: { type: Types.ObjectId, ref: "User", required: true },
     retouchedByAI: { type: Boolean, default: false }, // Indicates if AI has modified the task
     priorityLogs: { type: [PriorityLogSchema], default: [] }, // Stores priority change history
     notificationSent: {
