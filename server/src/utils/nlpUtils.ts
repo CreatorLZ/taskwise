@@ -1,10 +1,8 @@
 import { HfInference } from "@huggingface/inference";
 import Task from "../models/Task";
 
-// Initialize Hugging Face Inference API Client
 const client = new HfInference(process.env.HUGGINGFACE_API_KEY);
 
-// Utility function to process NLP and create a task
 export const createTaskFromNLP = async (command: string, userId: string) => {
   try {
     if (!userId) {
@@ -14,109 +12,106 @@ export const createTaskFromNLP = async (command: string, userId: string) => {
     const currentDate = new Date();
     const currentDateISO = currentDate.toISOString();
 
-    let output = "";
+    const prompt = `Convert this command into a JSON task object. Return only valid JSON:
+Command: ${command}
 
-    const stream = client.chatCompletionStream({
-      model: "Qwen/Qwen2.5-Coder-32B-Instruct",
-      messages: [
-        {
-          role: "system",
-          content: `You are a task parser. Convert the following commands into structured task data in JSON format based on this schema:
-          {
-            "title": "string",
-            "description": "string",
-            "completed": false,
-            "priority": "Low" | "Medium" | "High" | "Completed"
-            "dueDate": "ISO date string",
-            "status": "Pending" | "In-progress" | "Completed",
-            "reminderTime": "ISO date string ten minutes before dueDate",
-            "userId": "${userId}"
-          }
-          Ensure:
-          - Default priority: "Medium".
-          - Default status: "Pending".
-          - Reminder: 24 hours before the due date if unspecified.
-          - Parse dueDate from natural language.
-          - Always return valid JSON without enclosing it in unnecessary block markers like \`\`\`json.
-          - Use ${currentDateISO} as today's date. Reject dates before today.
-          - Assign "userId": "${userId}" explicitly to each task.
-          -always add a title
-          -always add a description
-          `,
-        },
-        {
-          role: "user",
-          content: command,
-          userId,
-        },
-      ],
-      max_tokens: 500,
+JSON format:
+{
+  "title": "clear title",
+  "description": "detailed description",
+  "completed": false,
+  "priority": "Medium",
+  "dueDate": "ISO date string",
+  "status": "Pending",
+  "reminderTime": "ISO date string",
+  "userId": "${userId}"
+}
+
+Use ${currentDateISO} as today's date. Set reminderTime 1h before dueDate.`;
+
+    const response = await client.textGeneration({
+      model: "deepseek-ai/DeepSeek-R1-Distill-Qwen-32B",
+      inputs: prompt,
+      parameters: {
+        max_new_tokens: 500,
+        temperature: 0.6,
+        return_full_text: false,
+      },
     });
 
-    for await (const chunk of stream) {
-      if (chunk.choices && chunk.choices.length > 0) {
-        const newContent = chunk.choices[0].delta.content;
-        output += newContent;
-        console.log("Streaming Output:", newContent);
+    let output = response.generated_text;
+    console.log("Model response:", output);
+
+    // Extract JSON object using regex
+    const jsonRegex = /\{[\s\S]*?\{[\s\S]*?\}[\s\S]*?\}/g;
+    // Find all JSON-like structures
+    const matches = output.match(jsonRegex);
+
+    if (!matches) {
+      // Try a simpler regex if the nested match fails
+      const simpleJsonRegex = /\{[\s\S]*?\}/g;
+      const simpleMatches = output.match(simpleJsonRegex);
+      if (!simpleMatches) {
+        throw new Error("No JSON object found in response");
+      }
+      // Take the longest match as it's likely the complete JSON
+      const jsonStr = simpleMatches.reduce((a, b) =>
+        a.length > b.length ? a : b
+      );
+      try {
+        const structuredTask = JSON.parse(jsonStr);
+        return await createTaskFromData(structuredTask, userId, currentDate);
+      } catch (error) {
+        console.error("Failed to parse simple JSON match:", jsonStr);
+        throw new Error("Invalid JSON format in response");
       }
     }
 
-    // Sanitize the response
-    let sanitizedOutput = output.trim();
+    // Take the longest match as it's likely the complete JSON
+    const jsonStr = matches.reduce((a, b) => (a.length > b.length ? a : b));
 
-    // Remove ```json markers
-    if (sanitizedOutput.startsWith("```json")) {
-      sanitizedOutput = sanitizedOutput.slice(7); // Remove the opening ```json
-    }
-    if (sanitizedOutput.endsWith("```")) {
-      sanitizedOutput = sanitizedOutput.slice(0, -3); // Remove the closing ```
-    }
-
-    // Parse the sanitized response into JSON
-    let structuredTask;
     try {
-      structuredTask = JSON.parse(sanitizedOutput);
-    } catch (parseError) {
-      console.error("Failed to parse JSON after sanitizing:", sanitizedOutput);
-      throw new Error("Invalid JSON format returned from Hugging Face API");
+      const structuredTask = JSON.parse(jsonStr);
+      return await createTaskFromData(structuredTask, userId, currentDate);
+    } catch (error) {
+      console.error("Failed to parse JSON:", jsonStr);
+      throw new Error("Invalid JSON format in response");
     }
-
-    // Ensure userId is explicitly set
-    structuredTask.userId = userId;
-
-    // Ensure defaults for required fields
-    const taskData = {
-      title: structuredTask.title || "Untitled Task",
-      description: structuredTask.description,
-      completed: false,
-      priority: structuredTask.priority || "medium",
-      dueDate: structuredTask.dueDate ? new Date(structuredTask.dueDate) : null,
-      status: structuredTask.status || "pending",
-      reminderTime: structuredTask.reminderTime
-        ? new Date(structuredTask.reminderTime)
-        : structuredTask.dueDate
-        ? new Date(
-            new Date(structuredTask.dueDate).getTime() - 24 * 60 * 60 * 1000
-          )
-        : undefined,
-      userId: structuredTask.userId,
-    };
-
-    if (!taskData.dueDate) {
-      throw new Error("dueDate is required but not provided");
-    }
-
-    if (taskData.dueDate < currentDate) {
-      throw new Error(
-        `Invalid dueDate: ${taskData.dueDate}. Date cannot be in the past.`
-      );
-    }
-
-    const task = await Task.create(taskData);
-
-    return task;
   } catch (error: any) {
     console.error("Error creating task from NLP:", error);
-    throw new Error("Failed to process the command and create a task");
+    throw new Error(`Failed to process command: ${error.message}`);
   }
+};
+
+// Helper function to create task from parsed data
+const createTaskFromData = async (
+  structuredTask: any,
+  userId: string,
+  currentDate: Date
+) => {
+  const taskData = {
+    title: structuredTask.title || "Untitled Task",
+    description: structuredTask.description,
+    completed: false,
+    priority: structuredTask.priority || "Medium",
+    dueDate: new Date(structuredTask.dueDate),
+    status: structuredTask.status || "Pending",
+    reminderTime: structuredTask.reminderTime
+      ? new Date(structuredTask.reminderTime)
+      : new Date(
+          new Date(structuredTask.dueDate).getTime() - 24 * 60 * 60 * 1000
+        ),
+    userId: userId,
+  };
+
+  // Validate dates
+  if (isNaN(taskData.dueDate.getTime())) {
+    throw new Error("Invalid dueDate format");
+  }
+
+  if (taskData.dueDate < currentDate) {
+    throw new Error("dueDate cannot be in the past");
+  }
+
+  return await Task.create(taskData);
 };

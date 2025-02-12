@@ -1,14 +1,8 @@
 import { HfInference } from "@huggingface/inference";
 import Task from "../models/Task";
 
-// Initialize Hugging Face Inference API Client
 const client = new HfInference(process.env.HUGGINGFACE_API_KEY);
 
-/**
- * Analyze and prioritize tasks for a specific user using AI.
- * Adjusts priorities and statuses based on workload, deadlines, and other factors.
- * @param userId - ID of the user whose tasks are to be analyzed.
- */
 export const analyzeAndPrioritizeTasks = async (userId: string) => {
   try {
     if (!userId) {
@@ -17,7 +11,6 @@ export const analyzeAndPrioritizeTasks = async (userId: string) => {
 
     const currentDate = new Date();
 
-    // Fetch tasks for the user that are incomplete and have a valid due date in the future
     const tasks = await Task.find({
       userId,
       completed: false,
@@ -33,88 +26,76 @@ export const analyzeAndPrioritizeTasks = async (userId: string) => {
 
       console.log(`Analyzing task for user ${userId}: ${title}`);
 
-      // Prepare context for AI analysis
-      const analysisInput = `
-        Analyze the following task data and recommend any priority/status changes if necessary:
-        Task: ${title}
-        Description: ${description || "No description provided"}
-        Current Priority: ${priority}
-        Due Date: ${dueDate.toISOString()}
-        Guidelines:
-        - Recommend "low", "medium", "completed" or "high" for priority.
-        - Adjust task status and priority based on due date and urgency.
-        - Provide a reason for any suggested changes.
-        - Use ${currentDate.toISOString()} as the reference date.
-      `;
+      // Prepare analysis prompt
+      const analysisInput = `Analyze this task and return only a JSON object with priority/status recommendations:
+Task: ${title}
+Description: ${description || "No description provided"}
+Current Priority: ${priority}
+Due Date: ${dueDate.toISOString()}
+Reference Date: ${currentDate.toISOString()}
 
-      // AI API call
-      let output = "";
-      const stream = client.chatCompletionStream({
-        model: "Qwen/Qwen2.5-Coder-32B-Instruct",
-        messages: [
-          {
-            role: "system",
-            content: `
-              You are an advanced task analyzer. Given task details, recommend changes to priority/status with explanations. if the Due Date of a task is in the past i.e if the due date is less than the reference date, it is a must! that you change the priority to high and status to pending.
-              Always respond with valid JSON in this schema:
-              {
-                "newPriority": "Low" | "Medium" | "High" | "Completed",
-                "newStatus": "Pending" | "In-progress" | "Completed",
-                "reason": "string"
-              }
-              Do not include additional headings or explanations outside of JSON.
-            `,
-          },
-          { role: "user", content: analysisInput },
-        ],
-        max_tokens: 500,
+Required JSON format:
+{
+  "newPriority": "Low" | "Medium" | "High" | "Completed",
+  "newStatus": "Pending" | "In-progress" | "Completed",
+  "reason": "string explanation"
+}
+
+Rules:
+- If due date < reference date, set priority="High" and status="Pending"
+- Explain any changes in the reason field
+- Return only the JSON object, no other text`;
+
+      // Use direct completion instead of streaming
+      const response = await client.textGeneration({
+        model: "deepseek-ai/DeepSeek-R1-Distill-Qwen-32B",
+        inputs: analysisInput,
+        parameters: {
+          max_new_tokens: 500,
+          temperature: 0.6,
+          return_full_text: false,
+        },
       });
 
-      for await (const chunk of stream) {
-        if (chunk.choices && chunk.choices.length > 0) {
-          const newContent = chunk.choices[0].delta.content;
-          output += newContent;
-          console.log("Streaming Output:", newContent);
-          // console.log("today is", currentDate.toISOString());
-        }
+      let output = response.generated_text;
+      console.log("Model response:", output);
+
+      // Extract JSON using regex
+      const jsonRegex = /\{[\s\S]*?\}/g;
+      const matches = output.match(jsonRegex);
+
+      if (!matches) {
+        console.error("No JSON found in response for task:", title);
+        continue;
       }
 
-      // Sanitize and parse the AI output
-      let sanitizedOutput = output.trim();
-
-      // Remove unwanted markers (if any)
-      if (sanitizedOutput.startsWith("```json")) {
-        sanitizedOutput = sanitizedOutput.slice(7); // Remove opening ```json
-      }
-      if (sanitizedOutput.endsWith("```")) {
-        sanitizedOutput = sanitizedOutput.slice(0, -3); // Remove closing ```
-      }
+      // Take the longest match as it's likely the complete JSON
+      const jsonStr = matches.reduce((a, b) => (a.length > b.length ? a : b));
 
       let aiResponse;
       try {
-        aiResponse = JSON.parse(sanitizedOutput);
+        aiResponse = JSON.parse(jsonStr);
       } catch (parseError) {
-        console.error("Failed to parse AI output as JSON:", sanitizedOutput);
-        console.error("Raw AI Response:", sanitizedOutput);
-        continue; // Skip this task and process the next one
+        console.error("Failed to parse JSON for task:", title);
+        console.error("JSON string:", jsonStr);
+        continue;
       }
 
-      // Validate AI response structure
+      // Validate response structure
       if (
         !aiResponse.newPriority ||
         !aiResponse.newStatus ||
         typeof aiResponse.reason !== "string"
       ) {
-        console.error("Invalid AI response structure:", aiResponse);
-        continue; // Skip this task and process the next one
+        console.error("Invalid AI response structure for task:", title);
+        continue;
       }
 
-      // Extract suggested changes
-      const newPriority = aiResponse.newPriority || priority; // Default to current priority if none provided
-      const newStatus = aiResponse.newStatus || task.status; // Default to current status
-      const reason = aiResponse.reason || "No specific reason provided";
+      // Update task if needed
+      const newPriority = aiResponse.newPriority;
+      const newStatus = aiResponse.newStatus;
+      const reason = aiResponse.reason;
 
-      // Check if updates are needed
       let isUpdated = false;
 
       if (newPriority !== priority) {
@@ -134,21 +115,21 @@ export const analyzeAndPrioritizeTasks = async (userId: string) => {
       }
 
       if (isUpdated) {
-        task.retouchedByAI = true; // Mark task as analyzed/retouched by AI
+        task.retouchedByAI = true;
         await task.save();
-        console.log(
-          `Task ${title} updated: Priority - ${priority} → ${newPriority}, Status - ${newStatus}`
-        );
+        console.log(`Task "${title}" updated:`, {
+          priority: `${priority} → ${newPriority}`,
+          status: `${task.status} → ${newStatus}`,
+          reason,
+        });
       } else {
-        console.log(`No changes needed for task ${title}.`);
+        console.log(`No changes needed for task "${title}"`);
       }
     }
 
-    console.log(
-      `Task analysis and prioritization complete for user ${userId}.`
-    );
+    console.log(`Task analysis complete for user ${userId}`);
   } catch (error) {
-    console.error("Error during task analysis and prioritization:", error);
-    throw new Error("Failed to analyze and prioritize tasks.");
+    console.error("Error during task analysis:", error);
+    throw new Error("Failed to analyze and prioritize tasks");
   }
 };
