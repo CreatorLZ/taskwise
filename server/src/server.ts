@@ -5,9 +5,11 @@ import taskRoutes from "./routes/taskRoutes";
 import authRoutes from "./routes/authRoutes";
 import nlpRoutes from "./routes/nlp";
 import prioritizeTasks from "./routes/prioritizeTasks";
+import taskAnalysis from "./routes/taskAnalysis";
 import connectDB from "./config/db";
 import userRoutes from "./routes/userRoutes";
 import "./cron/reminderCron";
+import { taskAnalysisScheduler } from "./cron/TaskAnalysisScheduler";
 
 // Load environment variables
 config();
@@ -35,6 +37,7 @@ app.use("/api/tasks", taskRoutes);
 app.use("/api/auth", authRoutes);
 app.use("/api", nlpRoutes);
 app.use("/api", prioritizeTasks);
+app.use("/api", taskAnalysis);
 app.use("/api/users", userRoutes);
 
 // Root route
@@ -46,5 +49,11 @@ app.get("/", (req: Request, res: Response) => {
 app.listen(port, () => {
   console.log(`Server is running on port ${port}`);
 });
+
+const startServer = async () => {
+  await taskAnalysisScheduler.restoreSchedules();
+};
+
+startServer();
 
 export default app;

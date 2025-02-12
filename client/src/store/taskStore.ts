@@ -22,12 +22,16 @@ interface TaskStore {
   tasks: Task[];
   setTasks: (tasks: Task[]) => void;
   clearTasks: () => void;
+  isAIEnabled: boolean;
+  setAIEnabled: (enabled: boolean) => void;
 }
 
 const useTaskStore = create(
   persist<TaskStore>(
     (set) => ({
       tasks: [],
+      isAIEnabled: false,
+      setAIEnabled: (enabled: boolean) => set({ isAIEnabled: enabled }),
       setTasks: (tasks) => set({ tasks: tasks || [] }),
       clearTasks: () => set({ tasks: [] }),
     }),
@@ -200,6 +204,29 @@ export function useAIPrioritizeTasksMutation() {
     onError: (error) => {
       console.error("Error with AI task prioritization:", error);
       throw error; // Propagate error to component
+    },
+  });
+}
+
+export function useTaskAnalysisSchedulingMutation() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async ({ enabled }: { enabled: boolean }) => {
+      if (enabled) {
+        const response = await api.post("/enable-task-analysis");
+        return response.data;
+      } else {
+        const response = await api.post("/disable-task-analysis");
+        return response.data;
+      }
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["tasks"] });
+    },
+    onError: (error) => {
+      console.error("Error managing task analysis scheduling:", error);
+      throw error;
     },
   });
 }

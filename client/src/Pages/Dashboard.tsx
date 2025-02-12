@@ -28,17 +28,24 @@ import {
 } from "lucide-react";
 import { NewTaskModal } from "@/components/ui/newTask";
 import { TaskCard } from "@/components/taskCard";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+  TooltipProvider,
+} from "@/components/ui/tooltip";
 
 import useAuthStore from "@/store/authstore";
 import useTaskStore, {
-  useAIPrioritizeTasksMutation,
+  // useAIPrioritizeTasksMutation,
   useFetchTasks,
+  useTaskAnalysisSchedulingMutation,
 } from "@/store/taskStore";
 import TaskSkeletonLoader from "@/components/taskSkeletonLoader";
 import EmptyTaskState from "@/components/emptyTasksState";
 
 export default function TaskDashboard() {
-  const [prioritizationEnabled, setPrioritizationEnabled] = useState(false);
+  // const [prioritizationEnabled, setPrioritizationEnabled] = useState(false);
   const [taskFilter, setTaskFilter] = useState<"all" | "today" | "upcoming">(
     "all"
   );
@@ -47,6 +54,9 @@ export default function TaskDashboard() {
 
   const user = useAuthStore((state) => state.user);
   const userId = useAuthStore((state) => state.userId);
+  const isAIEnabled = useTaskStore((state) => state.isAIEnabled);
+  const setAIEnabled = useTaskStore((state) => state.setAIEnabled);
+  const schedulingMutation = useTaskAnalysisSchedulingMutation();
 
   // Fetch tasks using React Query
   const { isLoading, error } = useFetchTasks(userId!);
@@ -152,260 +162,295 @@ export default function TaskDashboard() {
     setCompletedTasksToShow((prev) => prev + 5);
   };
 
-  const aiPrioritizeMutation = useAIPrioritizeTasksMutation();
+  // const aiPrioritizeMutation = useAIPrioritizeTasksMutation();
   return (
-    <div className="min-h-screen bg-background text-foreground">
-      <div className="bg-gradient-to-br from-primary/5 via-background to-primary/5 p-6">
-        <div className="max-w-7xl mx-auto space-y-8">
-          {/* Header */}
-          <div className="flex justify-between items-center">
-            <div>
-              <h1 className="text-2xl font-bold flex items-center gap-2">
-                <Brain className="w-6 h-6 text-primary" />
-                TaskWise
-              </h1>
-              <p className="text-muted-foreground">Powered by advanced AI</p>
+    <TooltipProvider>
+      {" "}
+      {/* Wrap with TooltipProvider */}
+      <div className="min-h-screen bg-background text-foreground">
+        <div className="bg-gradient-to-br from-primary/5 via-background to-primary/5 p-6">
+          <div className="max-w-7xl mx-auto space-y-8">
+            {/* Header */}
+            <div className="flex justify-between items-center">
+              <div>
+                <h1 className="text-2xl font-bold flex items-center gap-2">
+                  <Brain className="w-6 h-6 text-primary" />
+                  TaskWise
+                </h1>
+                <p className="text-muted-foreground">Powered by advanced AI</p>
+              </div>
+              <div className="flex items-center gap-4">
+                <NewTaskModal />
+              </div>
             </div>
-            <div className="flex items-center gap-4">
-              <NewTaskModal />
-            </div>
-          </div>
 
-          {/* AI Assistant Card */}
-          <Card className="border-border bg-card">
-            <CardHeader>
-              <div className="flex items-center justify-between">
-                <CardTitle className="flex items-center gap-2">
-                  <Sparkles className="w-5 h-5 text-primary" />
-                  AI Suggestions
-                </CardTitle>
-                <div className="flex items-center space-x-2">
-                  <Switch
-                    id="prioritization"
-                    checked={prioritizationEnabled}
-                    onCheckedChange={(checked) => {
-                      setPrioritizationEnabled(checked);
-                      if (checked) {
-                        aiPrioritizeMutation.mutate(userId!);
-                      }
-                    }}
-                  />
-                  <label
-                    htmlFor="prioritization"
-                    className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
-                  >
-                    AI Prioritization
-                  </label>
-                </div>
-              </div>
-              <CardDescription>
-                {prioritizationEnabled
-                  ? "AI is actively prioritizing your tasks based on importance and deadlines"
-                  : "Enable AI prioritization for smart task management"}
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="flex items-start gap-4">
-                <div className="bg-primary/10 p-2 rounded-lg">
-                  <TrendingUp className="w-4 h-4 text-primary" />
-                </div>
-                <div>
-                  <p className="font-medium">Productivity Insight</p>
-                  <p className="text-sm text-muted-foreground">
-                    You're most productive between 9 AM and 11 AM. Consider
-                    scheduling important tasks during this time.
-                  </p>
-                </div>
-              </div>
-              <div className="flex items-start gap-4">
-                <div className="bg-primary/10 p-2 rounded-lg">
-                  <Star className="w-4 h-4 text-primary" />
-                </div>
-                <div>
-                  <p className="font-medium">Task Optimization</p>
-                  <p className="text-sm text-muted-foreground">
-                    Breaking down "Project Review" into smaller tasks could
-                    improve completion rate by 35%.
-                  </p>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-
-          {/* Main Content */}
-          <div className="grid lg:grid-cols-3 gap-6">
-            {/* Tasks Overview */}
-            <Card className="lg:col-span-2">
+            {/* AI Assistant Card */}
+            <Card className="border-border bg-card">
               <CardHeader>
-                <div className="flex justify-between items-center">
-                  <CardTitle>Tasks Overview</CardTitle>
-                  <Select
-                    defaultValue="all"
-                    value={taskFilter}
-                    onValueChange={(value: "all" | "today" | "upcoming") =>
-                      setTaskFilter(value)
-                    }
-                  >
-                    <SelectTrigger className="w-32">
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="all">All Tasks</SelectItem>
-                      <SelectItem value="today">Today</SelectItem>
-                      <SelectItem value="upcoming">Upcoming</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-              </CardHeader>
-              <CardContent>
-                <Tabs defaultValue="in-progress" className="space-y-4">
-                  <TabsList>
-                    <TabsTrigger value="in-progress">In Progress</TabsTrigger>
-                    <TabsTrigger value="completed">Completed</TabsTrigger>
-                  </TabsList>
+                <div className="flex items-center justify-between">
+                  <CardTitle className="flex items-center gap-2">
+                    <Sparkles className="w-5 h-5 text-primary" />
+                    AI Suggestions
+                  </CardTitle>
+                  <div className="flex items-center space-x-2">
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <div className="flex items-center space-x-2">
+                          <Switch
+                            id="prioritization"
+                            checked={isAIEnabled}
+                            onCheckedChange={async (checked) => {
+                              try {
+                                setAIEnabled(checked);
+                                await schedulingMutation.mutateAsync({
+                                  enabled: checked,
+                                });
+                              } catch (error) {
+                                console.error(
+                                  "Error toggling task analysis:",
+                                  error
+                                );
+                                // Revert the switch if there was an error
+                                setAIEnabled(!checked);
+                              }
+                            }}
+                          />
 
-                  {isLoading ? (
-                    <div className="space-y-4">
-                      {[...Array(3)].map((_, index) => (
-                        <TaskSkeletonLoader key={index} />
-                      ))}
+                          <label
+                            htmlFor="prioritization"
+                            className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+                          >
+                            AI Prioritization
+                          </label>
+                          {schedulingMutation.isPending && (
+                            <span className="text-sm text-muted-foreground ml-2">
+                              Setting up scheduling...
+                            </span>
+                          )}
+                        </div>
+                      </TooltipTrigger>
+                      <TooltipContent className="max-w-xs">
+                        <p>
+                          AI analyzes your tasks based on deadlines,
+                          dependencies, and importance to automatically optimize
+                          your task order.
+                        </p>
+                      </TooltipContent>
+                    </Tooltip>
+                  </div>
+                </div>
+                <CardDescription>
+                  {isAIEnabled
+                    ? "AI is actively prioritizing your tasks twice daily"
+                    : "Enable AI prioritization for automated task management"}
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="flex items-start gap-4">
+                  <div className="bg-primary/10 p-2 rounded-lg">
+                    <TrendingUp className="w-4 h-4 text-primary" />
+                  </div>
+                  <div>
+                    <p className="font-medium">Productivity Insight</p>
+                    <p className="text-sm text-muted-foreground">
+                      You're most productive between 9 AM and 11 AM. Consider
+                      scheduling important tasks during this time.
+                    </p>
+                  </div>
+                </div>
+                <div className="flex items-start gap-4">
+                  <div className="bg-primary/10 p-2 rounded-lg">
+                    <Star className="w-4 h-4 text-primary" />
+                  </div>
+                  <div>
+                    <p className="font-medium">Task Optimization</p>
+                    <p className="text-sm text-muted-foreground">
+                      Breaking down "Project Review" into smaller tasks could
+                      improve completion rate by 35%.
+                    </p>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Main Content */}
+            <div className="grid lg:grid-cols-3 gap-6">
+              {/* Tasks Overview */}
+              <Card className="lg:col-span-2">
+                <CardHeader>
+                  <div className="flex justify-between items-center">
+                    <CardTitle>Tasks Overview</CardTitle>
+                    <Select
+                      defaultValue="all"
+                      value={taskFilter}
+                      onValueChange={(value: "all" | "today" | "upcoming") =>
+                        setTaskFilter(value)
+                      }
+                    >
+                      <SelectTrigger className="w-32">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="all">All Tasks</SelectItem>
+                        <SelectItem value="today">Today</SelectItem>
+                        <SelectItem value="upcoming">Upcoming</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </CardHeader>
+                <CardContent>
+                  <Tabs defaultValue="in-progress" className="space-y-4">
+                    <TabsList>
+                      <TabsTrigger value="in-progress">In Progress</TabsTrigger>
+                      <TabsTrigger value="completed">Completed</TabsTrigger>
+                    </TabsList>
+
+                    {isLoading ? (
+                      <div className="space-y-4">
+                        {[...Array(3)].map((_, index) => (
+                          <TaskSkeletonLoader key={index} />
+                        ))}
+                      </div>
+                    ) : error?.message == "Unauthorized" ? (
+                      <div>error loading tasks. try refreshing the page </div>
+                    ) : tasks.length === 0 ||
+                      filterTasks(tasks).length === 0 ? (
+                      <EmptyTaskState />
+                    ) : (
+                      <>
+                        <TabsContent value="in-progress" className="space-y-4">
+                          {filteredInProgressTasks.map((task) => (
+                            <TaskCard
+                              key={task._id}
+                              _id={task._id}
+                              title={task.title}
+                              category={task.category}
+                              priority={task.priority}
+                              progress={task.progress}
+                              dueTime={task.dueTime}
+                              completed={task.completed}
+                              dueDate={task.dueDate}
+                              aiPrioritized={isAIEnabled}
+                              description={task.description}
+                            />
+                          ))}
+                          {filteredInProgressTasks.length === 0 ? (
+                            <p className="text-muted-foreground">
+                              No tasks found.
+                            </p>
+                          ) : (
+                            filteredInProgressTasks.length <
+                              totalInProgressTasks && (
+                              <div className="flex justify-center mt-4">
+                                <Button
+                                  variant="outline"
+                                  onClick={handleLoadMoreInProgress}
+                                  className="w-full max-w-xs"
+                                >
+                                  Load More
+                                </Button>
+                              </div>
+                            )
+                          )}
+                        </TabsContent>
+                        <TabsContent value="completed" className="space-y-4">
+                          {filteredCompletedTasks.map((task) => (
+                            <TaskCard
+                              key={task._id}
+                              _id={task._id}
+                              title={task.title}
+                              category={task.category}
+                              priority={task.priority}
+                              progress={task.progress}
+                              dueTime={task.dueTime}
+                              dueDate={task.dueDate}
+                              completed
+                              aiPrioritized={isAIEnabled}
+                              description={task.description}
+                            />
+                          ))}
+                          {filteredCompletedTasks.length === 0 ? (
+                            <p className="text-muted-foreground">
+                              No completed tasks found.
+                            </p>
+                          ) : (
+                            filteredCompletedTasks.length <
+                              totalCompletedTasks && (
+                              <div className="flex justify-center mt-4">
+                                <Button
+                                  variant="outline"
+                                  onClick={handleLoadMoreCompleted}
+                                  className="w-full max-w-xs"
+                                >
+                                  Load More
+                                </Button>
+                              </div>
+                            )
+                          )}
+                        </TabsContent>
+                      </>
+                    )}
+                  </Tabs>
+                </CardContent>
+              </Card>
+
+              {/* Progress & Stats */}
+              <Card>
+                <CardHeader>
+                  <CardTitle>Progress & Stats</CardTitle>
+                  <CardDescription>Your productivity metrics</CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-8">
+                  <div className="space-y-2">
+                    <div className="flex justify-between text-sm">
+                      <span className="text-muted-foreground">
+                        Weekly Progress
+                      </span>
+                      <span className="font-medium">82%</span>
                     </div>
-                  ) : error?.message == "Unauthorized" ? (
-                    <div>error loading tasks. try refreshing the page </div>
-                  ) : tasks.length === 0 || filterTasks(tasks).length === 0 ? (
-                    <EmptyTaskState />
-                  ) : (
-                    <>
-                      <TabsContent value="in-progress" className="space-y-4">
-                        {filteredInProgressTasks.map((task) => (
-                          <TaskCard
-                            key={task._id}
-                            _id={task._id}
-                            title={task.title}
-                            category={task.category}
-                            priority={task.priority}
-                            progress={task.progress}
-                            dueTime={task.dueTime}
-                            completed={task.completed}
-                            dueDate={task.dueDate}
-                            aiPrioritized={prioritizationEnabled}
-                            description={task.description}
-                          />
-                        ))}
-                        {filteredInProgressTasks.length === 0 ? (
-                          <p className="text-muted-foreground">
-                            No tasks found.
-                          </p>
-                        ) : (
-                          filteredInProgressTasks.length <
-                            totalInProgressTasks && (
-                            <div className="flex justify-center mt-4">
-                              <Button
-                                variant="outline"
-                                onClick={handleLoadMoreInProgress}
-                                className="w-full max-w-xs"
-                              >
-                                Load More
-                              </Button>
-                            </div>
-                          )
-                        )}
-                      </TabsContent>
-                      <TabsContent value="completed" className="space-y-4">
-                        {filteredCompletedTasks.map((task) => (
-                          <TaskCard
-                            key={task._id}
-                            _id={task._id}
-                            title={task.title}
-                            category={task.category}
-                            priority={task.priority}
-                            progress={task.progress}
-                            dueTime={task.dueTime}
-                            dueDate={task.dueDate}
-                            completed
-                            aiPrioritized={prioritizationEnabled}
-                            description={task.description}
-                          />
-                        ))}
-                        {filteredCompletedTasks.length === 0 ? (
-                          <p className="text-muted-foreground">
-                            No completed tasks found.
-                          </p>
-                        ) : (
-                          filteredCompletedTasks.length <
-                            totalCompletedTasks && (
-                            <div className="flex justify-center mt-4">
-                              <Button
-                                variant="outline"
-                                onClick={handleLoadMoreCompleted}
-                                className="w-full max-w-xs"
-                              >
-                                Load More
-                              </Button>
-                            </div>
-                          )
-                        )}
-                      </TabsContent>
-                    </>
-                  )}
-                </Tabs>
-              </CardContent>
-            </Card>
-
-            {/* Progress & Stats */}
-            <Card>
-              <CardHeader>
-                <CardTitle>Progress & Stats</CardTitle>
-                <CardDescription>Your productivity metrics</CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-8">
-                <div className="space-y-2">
-                  <div className="flex justify-between text-sm">
-                    <span className="text-muted-foreground">
-                      Weekly Progress
-                    </span>
-                    <span className="font-medium">82%</span>
+                    <Progress value={82} />
                   </div>
-                  <Progress value={82} />
-                </div>
-                <div className="space-y-4">
-                  <h4 className="text-sm font-medium text-muted-foreground">
-                    Quick Stats
-                  </h4>
-                  <div className="grid grid-cols-2 gap-4">
-                    <StatCard
-                      icon={<CheckCircle2 className="w-4 h-4 text-green-500" />}
-                      label="Completed"
-                      value={totalCompletedTasks}
-                    />
-                    <StatCard
-                      icon={<Clock className="w-4 h-4 text-blue-500" />}
-                      label="In Progress"
-                      value={totalInProgressTasks}
-                    />
-                    <StatCard
-                      icon={<ListTodo className="w-4 h-4 text-primary" />}
-                      label="Total Tasks"
-                      value={tasks.length}
-                    />
-                    <StatCard
-                      icon={<Star className="w-4 h-4 text-rose-500" />}
-                      label="Priority"
-                      value={
-                        !tasks || !Array.isArray(tasks)
-                          ? 0
-                          : tasks.filter((task) => task.priority === "High")
-                              .length
-                      }
-                    />
+                  <div className="space-y-4">
+                    <h4 className="text-sm font-medium text-muted-foreground">
+                      Quick Stats
+                    </h4>
+                    <div className="grid grid-cols-2 gap-4">
+                      <StatCard
+                        icon={
+                          <CheckCircle2 className="w-4 h-4 text-green-500" />
+                        }
+                        label="Completed"
+                        value={totalCompletedTasks}
+                      />
+                      <StatCard
+                        icon={<Clock className="w-4 h-4 text-blue-500" />}
+                        label="In Progress"
+                        value={totalInProgressTasks}
+                      />
+                      <StatCard
+                        icon={<ListTodo className="w-4 h-4 text-primary" />}
+                        label="Total Tasks"
+                        value={tasks.length}
+                      />
+                      <StatCard
+                        icon={<Star className="w-4 h-4 text-rose-500" />}
+                        label="Priority"
+                        value={
+                          !tasks || !Array.isArray(tasks)
+                            ? 0
+                            : tasks.filter((task) => task.priority === "High")
+                                .length
+                        }
+                      />
+                    </div>
                   </div>
-                </div>
-              </CardContent>
-            </Card>
+                </CardContent>
+              </Card>
+            </div>
           </div>
         </div>
       </div>
-    </div>
+    </TooltipProvider>
   );
 }
 

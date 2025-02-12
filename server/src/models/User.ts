@@ -11,6 +11,13 @@ interface IUser extends Document {
   comparePassword(plainPassword: string): Promise<boolean>;
   fcmToken?: string;
   tasks: Types.ObjectId[]; // Array of task references
+  taskAnalysisSchedule: TaskAnalysisSchedule; // Task analysis schedule
+}
+
+interface TaskAnalysisSchedule {
+  firstRunTime: string;
+  secondRunTime: string;
+  enabled: boolean;
 }
 
 const UserSchema: Schema<IUser> = new Schema(
@@ -21,6 +28,11 @@ const UserSchema: Schema<IUser> = new Schema(
       required: true,
       unique: true,
       match: [/\S+@\S+\.\S+/, "Please enter a valid email address"],
+    },
+    taskAnalysisSchedule: {
+      firstRunTime: { type: String, default: "" },
+      secondRunTime: { type: String, default: "" },
+      enabled: { type: Boolean, default: false },
     },
     password: { type: String, required: true },
     failedLoginAttempts: { type: Number, default: 0 },
