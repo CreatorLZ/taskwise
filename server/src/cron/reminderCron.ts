@@ -48,7 +48,6 @@ const sendEmailNotification = async (
   }
 };
 
-// Helper function to process notifications for a single task
 const processTaskNotification = async (
   task: any,
   user: any
@@ -59,8 +58,12 @@ const processTaskNotification = async (
     // Send push notification if FCM token exists
     if (user.fcmToken) {
       try {
+        const title = "Task Reminder";
         const message = `Reminder: "${task.title}" is due ${task.dueTime}`;
-        await sendPushNotification(user.fcmToken, message);
+        await sendPushNotification(user.fcmToken, title, message, {
+          taskId: task._id.toString(),
+          dueDate: task.dueDate.toString(),
+        });
         notificationSent = true;
         console.log(`Push notification sent for task "${task.title}"`);
       } catch (error) {

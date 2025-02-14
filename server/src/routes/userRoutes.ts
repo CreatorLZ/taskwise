@@ -18,12 +18,6 @@ router.put(
   async (req: Request, res: Response) => {
     try {
       const { userId, fcmToken } = (req as any).body;
-      // const userId = (req as any).user.id;
-
-      // Verify the authenticated user matches the userId
-      // if (req.user?.id !== userId) {
-      //   return res.status(403).json({ message: 'Unauthorized' });
-      // }
 
       // Update the user's FCM token
       await User.findByIdAndUpdate(userId, { fcmToken });

@@ -21,10 +21,42 @@ messaging.onBackgroundMessage((payload) => {
   console.log("Received background message:", payload);
 
   const notificationTitle = payload.notification.title;
+
   const notificationOptions = {
     body: payload.notification.body,
-    icon: "/logo192.png",
+    icon: "/icon-192x192.png",
+    badge: "/icon-192x192.png",
+    vibrate: [200, 100, 200],
+    // requireInteraction: false,
+    timestamp: Date.now(),
+    data: payload.data,
+    // actions: [
+    //   {
+    //     action: "view",
+    //     title: "View Task",
+    //   },
+    // ],
   };
 
   self.registration.showNotification(notificationTitle, notificationOptions);
+});
+
+// Handle notification clicks
+// self.addEventListener("notificationclick", (event) => {
+//   event.notification.close();
+
+//   if (event.action === "view") {
+//     // Navigate to specific task
+//     const taskUrl = event.notification.data?.taskUrl || "/";
+//     clients.openWindow(taskUrl);
+//   } else {
+//     // Default click behavior
+//     clients.openWindow("/");
+//   }
+// });
+
+self.addEventListener("notificationclick", (event) => {
+  event.notification.close();
+  const taskUrl = event.notification.data?.taskUrl || "/";
+  clients.openWindow(taskUrl);
 });
