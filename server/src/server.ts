@@ -27,7 +27,7 @@ app.use(express.json());
 app.use(
   cors({
     // origin: "http://localhost:5173", // Allow requests from the frontend
-    origin: "https://taskwise-three.vercel.app/",
+    origin: "https://taskwise-three.vercel.app",
     methods: ["GET", "POST", "PUT", "DELETE", "PATCH"], // Allowed HTTP methods
     credentials: true,
   })
