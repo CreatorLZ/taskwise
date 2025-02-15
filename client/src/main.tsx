@@ -12,7 +12,7 @@ import { ReactQueryDevtools } from "@tanstack/react-query-devtools";
 const router = createBrowserRouter([
   {
     path: "/",
-    element: <TaskDashboard />,
+    element: <Landing />,
   },
   {
     path: "/landing",
