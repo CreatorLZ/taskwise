@@ -8,15 +8,20 @@ import RegisterPage from "./Pages/Register.tsx";
 import LoginPage from "./Pages/Login.tsx";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { ReactQueryDevtools } from "@tanstack/react-query-devtools";
+import ProtectedRoute from "./ProtectedRoute.tsx";
 
 const router = createBrowserRouter([
   {
     path: "/",
-    element: <TaskDashboard />,
+    element: <Landing />,
   },
   {
-    path: "/landing",
-    element: <Landing />,
+    path: "/dashboard",
+    element: (
+      <ProtectedRoute>
+        <TaskDashboard />
+      </ProtectedRoute>
+    ),
   },
   {
     path: "/register",

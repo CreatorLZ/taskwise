@@ -70,7 +70,7 @@ export default function LoginPage() {
       });
 
       // Navigate to the homepage
-      navigate("/");
+      navigate("/dashboard");
     } catch (error: any) {
       // Handle API errors
       const errorResponse = error?.response?.data?.message || "Login failed";
