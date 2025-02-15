@@ -43,6 +43,7 @@ import useTaskStore, {
 } from "@/store/taskStore";
 import TaskSkeletonLoader from "@/components/taskSkeletonLoader";
 import EmptyTaskState from "@/components/emptyTasksState";
+import { LoadingIndicator } from "@/components/loadingIndicator";
 
 export default function TaskDashboard() {
   // const [prioritizationEnabled, setPrioritizationEnabled] = useState(false);
@@ -222,10 +223,13 @@ export default function TaskDashboard() {
                           >
                             AI Prioritization
                           </label>
-                          {schedulingMutation.isPending && (
+                          {/* {schedulingMutation.isPending && (
                             <span className="text-sm text-muted-foreground ml-2">
                               Setting up scheduling...
                             </span>
+                          )} */}
+                          {schedulingMutation.isPending && (
+                            <LoadingIndicator className="ml-2" />
                           )}
                         </div>
                       </TooltipTrigger>
