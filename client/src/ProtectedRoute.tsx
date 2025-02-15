@@ -9,8 +9,8 @@ const ProtectedRoute = ({ children }: ProtectedRouteProps) => {
   const token = useAuthStore((state) => state.token);
 
   if (!token) {
-    // Redirect to login if there's no token
-    return <Navigate to="/login" replace />;
+    // Redirect to landing if there's no token (user is not logged in)
+    return <Navigate to="/" replace />;
   }
 
   return <>{children}</>;
