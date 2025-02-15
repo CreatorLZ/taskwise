@@ -1,6 +1,6 @@
 // src/hooks/useNotifications.ts
 import { useState } from "react";
-import { getMessaging, getToken } from "firebase/messaging";
+import { getToken } from "firebase/messaging";
 import { messaging } from "../firebase";
 import api from "../utils/api";
 // import useNotificationStore from '../store/notificationStore';

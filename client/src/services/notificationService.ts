@@ -1,4 +1,4 @@
-import { getMessaging, getToken, onMessage } from "firebase/messaging";
+import { getToken, onMessage } from "firebase/messaging";
 import { messaging } from "../firebase";
 import api from "../utils/api";
 
