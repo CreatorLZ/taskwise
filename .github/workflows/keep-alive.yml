@@ -1,0 +1,30 @@
+name: Keep Render App Alive
+
+on:
+  schedule:
+    - cron: "*/10 * * * *" # Runs every 10 minutes
+  workflow_dispatch: # Allows manual triggering from GitHub UI
+
+jobs:
+  ping:
+    name: Ping Render App
+    runs-on: ubuntu-latest
+    steps:
+      - name: Send HTTP Request
+        id: ping
+        uses: fjogeleit/http-request-action@v1
+        with:
+          url: ${{ secrets.RENDER_APP_URL }}
+          method: "GET"
+          timeout: 5000
+
+      - name: Log Response Status
+        run: |
+          echo "Response Status: ${{ steps.ping.outputs.response }}"
+
+      - name: Check Response
+        if: ${{ steps.ping.outputs.response != '200' }}
+        uses: actions/github-script@v6
+        with:
+          script: |
+            core.setFailed('Ping failed with status: ${{ steps.ping.outputs.response }}')
