@@ -46,6 +46,10 @@ app.get("/", (req: Request, res: Response) => {
   res.send("Taskwise API is running");
 });
 
+app.get("/health", (req: Request, res: Response) => {
+  res.status(200).send("Server is running");
+});
+
 // Start the server
 app.listen(port, () => {
   console.log(`Server is running on port ${port}`);
