@@ -18,13 +18,14 @@ jobs:
           method: "GET"
           timeout: 5000
 
-      - name: Log Response Status
+      - name: Log Response
         run: |
-          echo "Response Status: ${{ steps.ping.outputs.response }}"
+          echo "Response Status: ${{ steps.ping.outputs.status }}"
+          echo "Response Body: ${{ steps.ping.outputs.response }}"
 
       - name: Check Response
-        if: ${{ steps.ping.outputs.response != '200' }}
+        if: ${{ steps.ping.outputs.status >= 400 }} # Only fail on actual error status codes
         uses: actions/github-script@v6
         with:
           script: |
-            core.setFailed('Ping failed with status: ${{ steps.ping.outputs.response }}')
+            core.setFailed('Ping failed with status: ${{ steps.ping.outputs.status }}')
