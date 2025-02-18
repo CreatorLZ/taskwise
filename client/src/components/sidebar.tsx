@@ -279,10 +279,10 @@ export function DashboardSidebar() {
                         <Avatar className="size-8">
                           <AvatarImage
                             src={user?.image || "/placeholder.svg"}
-                            alt={user?.name || "User"}
+                            alt={user?.username || "User"}
                           />
                           <AvatarFallback>
-                            {user?.name?.[0] || "U"}
+                            {user?.username?.[0] || "U"}
                           </AvatarFallback>
                         </Avatar>
                         <div className="flex flex-col gap-0.5 leading-none">
@@ -296,7 +296,9 @@ export function DashboardSidebar() {
                       </SidebarMenuButton>
                     </TooltipTrigger>
                     <TooltipContent side="right">
-                      <p className="font-medium">{user?.name || "User Name"}</p>
+                      <p className="font-medium">
+                        {user?.username || "User Name"}
+                      </p>
                       <p className="text-xs text-muted-foreground">
                         {user?.email || "user@example.com"}
                       </p>
@@ -397,15 +399,15 @@ export function DashboardSidebar() {
                       <Avatar className="size-8">
                         <AvatarImage
                           src={user?.image || "/placeholder.svg"}
-                          alt={user?.name || "User"}
+                          alt={user?.username || "User"}
                         />
                         <AvatarFallback>
-                          {user?.name?.[0] || "U"}
+                          {user?.username?.[0] || "U"}
                         </AvatarFallback>
                       </Avatar>
                       <div className="flex flex-col gap-0.5 leading-none">
                         <span className="font-medium">
-                          {user?.name || "User Name"}
+                          {user?.username || "User Name"}
                         </span>
                         <span className="text-xs text-muted-foreground">
                           {user?.email || "user@example.com"}
@@ -417,7 +419,9 @@ export function DashboardSidebar() {
                     side="right"
                     className="hidden group-data-[state=collapsed]:block"
                   >
-                    <p className="font-medium">{user?.name || "User Name"}</p>
+                    <p className="font-medium">
+                      {user?.username || "User Name"}
+                    </p>
                     <p className="text-xs text-muted-foreground">
                       {user?.email || "user@example.com"}
                     </p>
