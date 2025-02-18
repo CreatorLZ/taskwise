@@ -53,7 +53,7 @@ export default function TaskDashboard() {
   const [inProgressTasksToShow, setInProgressTasksToShow] = useState(5);
   const [completedTasksToShow, setCompletedTasksToShow] = useState(5);
 
-  const user = useAuthStore((state) => state.user);
+  // const user = useAuthStore((state) => state.user);
   const userId = useAuthStore((state) => state.userId);
   const isAIEnabled = useTaskStore((state) => state.isAIEnabled);
   const setAIEnabled = useTaskStore((state) => state.setAIEnabled);
@@ -64,7 +64,7 @@ export default function TaskDashboard() {
 
   const tasks = useTaskStore((state) => state.tasks) ?? [];
 
-  console.log(user);
+  // console.log(user);
   // console.log(tasks);
   interface Task {
     _id: string;

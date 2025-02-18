@@ -1,3 +1,5 @@
+"use client";
+
 import { useCallback, useEffect, useState } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import {
@@ -39,7 +41,12 @@ import {
 } from "@/components/ui/tooltip";
 import useAuthStore from "@/store/authstore";
 import useTaskStore from "@/store/taskStore";
-import { Sheet, SheetContent } from "@/components/ui/sheet";
+import {
+  Sheet,
+  SheetContent,
+  SheetDescription,
+  SheetTitle,
+} from "@/components/ui/sheet";
 import api from "@/utils/api";
 import { useQueryClient } from "@tanstack/react-query";
 
@@ -155,14 +162,15 @@ export function DashboardSidebar() {
   const renderMenuButton = (item: any) => {
     if (item.handleClick) {
       return (
-        <button
+        <div
           className="flex w-full items-center gap-2 disabled:opacity-15"
-          onClick={() => item.handleClick()}
-          disabled={item.disabled}
+          onClick={() => !item.disabled && item.handleClick()}
+          role="button"
+          tabIndex={item.disabled ? -1 : 0}
         >
           <item.icon className="size-4 shrink-0" />
           <span className="truncate">{item.name}</span>
-        </button>
+        </div>
       );
     }
 
@@ -187,6 +195,7 @@ export function DashboardSidebar() {
         size="icon"
         className="fixed top-4 left-4 z-50 md:hidden"
         onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+        aria-label={isMobileMenuOpen ? "Close menu" : "Open menu"}
       >
         {isMobileMenuOpen ? (
           <X className="size-6" />
@@ -198,6 +207,14 @@ export function DashboardSidebar() {
       {/* Mobile Sidebar */}
       <Sheet open={isMobileMenuOpen} onOpenChange={setIsMobileMenuOpen}>
         <SheetContent side="left" className="w-[300px] p-0">
+          <div className="hidden">
+            <div className="p-4 ">
+              <SheetTitle>Navigation Menu</SheetTitle>
+              <SheetDescription>
+                Access your dashboard, tasks, and account settings
+              </SheetDescription>
+            </div>
+          </div>
           <div className="h-full overflow-y-auto">
             <SidebarHeader className="mt-16">
               <SidebarMenu>
@@ -275,25 +292,27 @@ export function DashboardSidebar() {
                 <SidebarMenuItem>
                   <Tooltip>
                     <TooltipTrigger asChild>
-                      <SidebarMenuButton size="lg">
-                        <Avatar className="size-8">
-                          <AvatarImage
-                            src={user?.image || "/placeholder.svg"}
-                            alt={user?.username || "User"}
-                          />
-                          <AvatarFallback>
-                            {user?.username?.[0] || "U"}
-                          </AvatarFallback>
-                        </Avatar>
-                        <div className="flex flex-col gap-0.5 leading-none">
-                          <span className="font-medium">
-                            {user?.username || "User Name"}
-                          </span>
-                          <span className="text-xs text-muted-foreground">
-                            {user?.email || "user@example.com"}
-                          </span>
+                      <div className="w-full">
+                        <div className="flex w-full items-center gap-2 p-2 cursor-pointer hover:bg-accent">
+                          <Avatar className="size-8">
+                            <AvatarImage
+                              src={user?.image || "/placeholder.svg"}
+                              alt={user?.username || "User"}
+                            />
+                            <AvatarFallback>
+                              {user?.username?.[0] || "U"}
+                            </AvatarFallback>
+                          </Avatar>
+                          <div className="flex flex-col gap-0.5 leading-none">
+                            <span className="font-medium">
+                              {user?.username || "User Name"}
+                            </span>
+                            <span className="text-xs text-muted-foreground">
+                              {user?.email || "user@example.com"}
+                            </span>
+                          </div>
                         </div>
-                      </SidebarMenuButton>
+                      </div>
                     </TooltipTrigger>
                     <TooltipContent side="right">
                       <p className="font-medium">
@@ -392,7 +411,9 @@ export function DashboardSidebar() {
               <SidebarMenuItem>
                 <Tooltip>
                   <TooltipTrigger asChild>
+                    {/* <div className="cursor-pointer"> */}
                     <SidebarTrigger />
+                    {/* </div> */}
                   </TooltipTrigger>
                   <TooltipContent side="right">
                     <p>
@@ -404,8 +425,10 @@ export function DashboardSidebar() {
               <SidebarMenuItem>
                 <Tooltip>
                   <TooltipTrigger asChild>
-                    <SidebarMenuButton size="lg">
-                      <Avatar className="size-8">
+                    {/* <div className="w-full"> */}
+                    <SidebarMenuButton size="default">
+                      {/* <div className="flex w-full items-center gap-2 p-2 cursor-pointer hover:bg-accent"> */}
+                      <Avatar className="size-4">
                         <AvatarImage
                           src={user?.image || "/placeholder.svg"}
                           alt={user?.username || "User"}
@@ -422,7 +445,9 @@ export function DashboardSidebar() {
                           {user?.email || "user@example.com"}
                         </span>
                       </div>
+                      {/* </div> */}
                     </SidebarMenuButton>
+                    {/* </div> */}
                   </TooltipTrigger>
                   <TooltipContent
                     side="right"

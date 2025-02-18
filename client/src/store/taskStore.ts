@@ -63,7 +63,7 @@ export function useFetchTasks(userId: string) {
     queryFn: async () => {
       const response = await api.get(`/tasks/user/${userId}`);
       setTasks(response.data);
-      console.log(response.data);
+      // console.log(response.data);
       return response.data;
     },
     staleTime: 5000,
@@ -199,7 +199,7 @@ export function useAIPrioritizeTasksMutation() {
 
       // Update Zustand store with updated tasks
       setTasks(updatedTasks);
-      console.log(updatedTasks + " updated");
+      // console.log(updatedTasks + " updated");
     },
     onError: (error) => {
       console.error("Error with AI task prioritization:", error);
