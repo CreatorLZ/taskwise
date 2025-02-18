@@ -86,8 +86,20 @@ export default function TaskDashboard() {
         console.warn("Tasks is not an array:", tasks);
         return [];
       }
+      //This properly compares just the date portions of two dates without the time 🌹
 
-      const today = new Date().toISOString().split("T")[0];
+      const isToday = (dateString: string) => {
+        const today = new Date();
+        const taskDate = new Date(dateString);
+
+        return (
+          taskDate.getDate() === today.getDate() &&
+          taskDate.getMonth() === today.getMonth() &&
+          taskDate.getFullYear() === today.getFullYear()
+        );
+      };
+
+      const today = new Date().toISOString();
 
       const filteredTasks = tasks.filter((task: Task) => {
         if (!task) return false;
@@ -101,7 +113,7 @@ export default function TaskDashboard() {
 
         switch (taskFilter) {
           case "today":
-            return isCompletedMatch && task.dueDate === today;
+            return isCompletedMatch && isToday(task.dueDate);
           case "upcoming":
             return isCompletedMatch && new Date(task.dueDate) > new Date(today);
           default:
@@ -172,13 +184,13 @@ export default function TaskDashboard() {
         <div className="bg-gradient-to-br from-primary/5 via-background to-primary/5 p-6">
           <div className="max-w-7xl mx-auto space-y-8">
             {/* Header */}
-            <div className="flex justify-between items-center">
+            <div className="flex justify-between items-center mt-8 md:mt-0">
               <div>
                 <h1 className="text-2xl font-bold flex items-center gap-2">
                   <Brain className="w-6 h-6 text-primary" />
                   TaskWise
                 </h1>
-                <p className="text-muted-foreground">Powered by advanced AI</p>
+                <p className="text-muted-foreground">AI-Powered Tasks</p>
               </div>
               <div className="flex items-center gap-4">
                 <NewTaskModal />

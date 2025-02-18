@@ -9,27 +9,43 @@ import LoginPage from "./Pages/Login.tsx";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { ReactQueryDevtools } from "@tanstack/react-query-devtools";
 import ProtectedRoute from "./ProtectedRoute.tsx";
+import { DashboardLayout } from "./components/dashboardLayout.tsx";
+import PublicRoute from "./PublicRoute.tsx";
 
 const router = createBrowserRouter([
   {
     path: "/",
-    element: <Landing />,
+    element: (
+      <PublicRoute>
+        <Landing />
+      </PublicRoute>
+    ),
   },
   {
     path: "/dashboard",
     element: (
       <ProtectedRoute>
-        <TaskDashboard />
+        <DashboardLayout>
+          <TaskDashboard />
+        </DashboardLayout>
       </ProtectedRoute>
     ),
   },
   {
     path: "/register",
-    element: <RegisterPage />,
+    element: (
+      <PublicRoute>
+        <RegisterPage />
+      </PublicRoute>
+    ),
   },
   {
     path: "/login",
-    element: <LoginPage />,
+    element: (
+      <PublicRoute>
+        <LoginPage />
+      </PublicRoute>
+    ),
   },
 ]);
 
