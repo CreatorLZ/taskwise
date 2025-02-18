@@ -1,7 +1,5 @@
-"use client";
-
 import { useState } from "react";
-import { Link, useLocation } from "react-router-dom";
+import { Link, useLocation, useNavigate } from "react-router-dom";
 import {
   Brain,
   Calendar,
@@ -13,6 +11,7 @@ import {
   Users,
   Menu,
   X,
+  LogOut,
 } from "lucide-react";
 
 import {
@@ -39,27 +38,51 @@ import {
   // TooltipProvider,
 } from "@/components/ui/tooltip";
 import useAuthStore from "@/store/authstore";
+import useTaskStore from "@/store/taskStore";
 import { Sheet, SheetContent } from "@/components/ui/sheet";
-
-const navigation = {
-  main: [
-    { name: "Dashboard", icon: Home, path: "/dashboard" },
-    { name: "Tasks", icon: ListTodo, path: "/tasks" },
-    { name: "Calendar", icon: Calendar, path: "/calendar" },
-    { name: "Team", icon: Users, path: "/team" },
-  ],
-  secondary: [
-    { name: "Statistics", icon: Star, path: "/stats" },
-    { name: "History", icon: Clock, path: "/history" },
-    { name: "Settings", icon: Settings, path: "/settings" },
-  ],
-};
+import api from "@/utils/api";
 
 export function DashboardSidebar() {
   const location = useLocation();
+  const navigate = useNavigate();
+  const logout = useAuthStore((state) => state.logout);
   const { state } = useSidebar();
   const user = useAuthStore((state) => state.user);
+  const clearTasks = useTaskStore((state) => state.clearTasks);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+
+  const handleLogout = async () => {
+    try {
+      const userId = useAuthStore.getState().userId;
+
+      // Call the logout endpoint
+      await api.post("/auth/logout", { userId });
+
+      // Clear local storage and state
+      logout();
+      clearTasks();
+
+      // Redirect to login page
+      navigate("/login");
+    } catch (error) {
+      console.error("Error logging out:", error);
+    }
+  };
+
+  const navigation = {
+    main: [
+      { name: "Dashboard", icon: Home, path: "/dashboard" },
+      { name: "Tasks", icon: ListTodo, path: "/tasks" },
+      { name: "Calendar", icon: Calendar, path: "/calendar" },
+      { name: "Team", icon: Users, path: "/team" },
+    ],
+    secondary: [
+      { name: "Statistics", icon: Star, path: "/stats" },
+      { name: "History", icon: Clock, path: "/history" },
+      { name: "Settings", icon: Settings, path: "/settings" },
+      { name: "Log Out", icon: LogOut, onClick: handleLogout, path: "#" },
+    ],
+  };
 
   return (
     <>

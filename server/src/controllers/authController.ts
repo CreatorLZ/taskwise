@@ -36,9 +36,33 @@ export const login = async (
       return res.status(401).json({ message: "Invalid credentials" });
     }
 
+    user.isLoggedIn = true;
+    await user.save();
+
     const token = generateToken(user._id.toString());
     res.json({ token, userId: user._id.toString(), user });
   } catch (error) {
     res.status(500).json({ message: "Error logging in", error });
+  }
+};
+
+//logout a user
+
+export const logout = async (
+  req: Request,
+  res: Response
+): Promise<void | any> => {
+  try {
+    const userId = req.body.userId;
+
+    // Update the user's record
+    await User.findByIdAndUpdate(userId, {
+      fcmToken: null,
+      isLoggedIn: false,
+    });
+
+    res.status(200).json({ message: "Logged out successfully" });
+  } catch (error) {
+    res.status(500).json({ message: "Error logging out", error });
   }
 };

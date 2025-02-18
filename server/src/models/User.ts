@@ -5,6 +5,7 @@ interface IUser extends Document {
   username: string;
   email: string;
   password: string;
+  isLoggedIn?: boolean;
   _id: Types.ObjectId;
   failedLoginAttempts: number;
   isLocked: boolean;
@@ -37,6 +38,7 @@ const UserSchema: Schema<IUser> = new Schema(
     password: { type: String, required: true },
     failedLoginAttempts: { type: Number, default: 0 },
     isLocked: { type: Boolean, default: false },
+    isLoggedIn: { type: Boolean, default: false },
     fcmToken: { type: String },
     tasks: [{ type: mongoose.Schema.Types.ObjectId, ref: "Task" }], // Reference to Task collection
   },
