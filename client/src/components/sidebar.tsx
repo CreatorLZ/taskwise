@@ -390,7 +390,16 @@ export function DashboardSidebar() {
           <SidebarFooter>
             <SidebarMenu>
               <SidebarMenuItem>
-                <SidebarTrigger />
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <SidebarTrigger />
+                  </TooltipTrigger>
+                  <TooltipContent side="right">
+                    <p>
+                      {state === "collapsed" ? "Open Sidebar" : "Close Sidebar"}
+                    </p>
+                  </TooltipContent>
+                </Tooltip>
               </SidebarMenuItem>
               <SidebarMenuItem>
                 <Tooltip>

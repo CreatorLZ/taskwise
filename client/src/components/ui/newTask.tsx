@@ -56,7 +56,8 @@ export function NewTaskModal() {
       },
       onError: (error: any) => {
         const errorResponse =
-          error?.response?.data?.message || "Failed to create task using AI.";
+          error?.response?.data?.message ||
+          "Failed to create task using AI. Please try again.";
         setErrorMessage(errorResponse);
       },
     });
@@ -100,7 +101,8 @@ export function NewTaskModal() {
           },
           onError: (error: any) => {
             const errorResponse =
-              error?.response?.data?.message || "Failed to create task.";
+              error?.response?.data?.message ||
+              "Failed to create task. Please try again.";
             setErrorMessage(errorResponse);
           },
         }
