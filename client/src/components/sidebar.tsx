@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import {
   Brain,
@@ -41,47 +41,142 @@ import useAuthStore from "@/store/authstore";
 import useTaskStore from "@/store/taskStore";
 import { Sheet, SheetContent } from "@/components/ui/sheet";
 import api from "@/utils/api";
+import { useQueryClient } from "@tanstack/react-query";
 
 export function DashboardSidebar() {
   const location = useLocation();
   const navigate = useNavigate();
-  const logout = useAuthStore((state) => state.logout);
+  const queryClient = useQueryClient();
+  // const logout = useAuthStore((state) => state.logout);
   const { state } = useSidebar();
   const user = useAuthStore((state) => state.user);
-  const clearTasks = useTaskStore((state) => state.clearTasks);
+  // const clearTasks = useTaskStore((state) => state.clearTasks);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const [isLoggingOut, setIsLoggingOut] = useState(false);
+  const [shouldRedirect, setShouldRedirect] = useState(false);
 
-  const handleLogout = async () => {
+  const handleLogout = useCallback(async () => {
+    if (isLoggingOut) return; // Prevent multiple logout attempts
+
     try {
+      setIsLoggingOut(true);
       const userId = useAuthStore.getState().userId;
 
       // Call the logout endpoint
       await api.post("/auth/logout", { userId });
 
-      // Clear local storage and state
-      logout();
-      clearTasks();
+      // Clear query cache
+      queryClient.clear();
 
-      // Redirect to login page
-      navigate("/login");
+      // Clear local storage and state
+      useAuthStore.getState().logout();
+      useTaskStore.getState().clearTasks();
+
+      // Navigate after all cleanup is done
+      // navigate("/");
+      setShouldRedirect(true);
     } catch (error) {
       console.error("Error logging out:", error);
+      setIsLoggingOut(false);
     }
-  };
+  }, [queryClient, isLoggingOut]);
+
+  // Handle navigation after logout in useEffect
+  useEffect(() => {
+    if (shouldRedirect) {
+      navigate("/");
+      setShouldRedirect(false);
+    }
+  }, [shouldRedirect, navigate]);
 
   const navigation = {
     main: [
-      { name: "Dashboard", icon: Home, path: "/dashboard" },
-      { name: "Tasks", icon: ListTodo, path: "/tasks" },
-      { name: "Calendar", icon: Calendar, path: "/calendar" },
-      { name: "Team", icon: Users, path: "/team" },
+      {
+        name: "Dashboard",
+        icon: Home,
+        path: "/dashboard",
+        tooltip: "Dashboard",
+      },
+      {
+        name: "Tasks",
+        icon: ListTodo,
+        path: "#",
+        disabled: true,
+        tooltip: "In the works",
+      },
+      {
+        name: "Calendar",
+        icon: Calendar,
+        path: "#",
+        disabled: true,
+        tooltip: "In the works",
+      },
+      {
+        name: "Team",
+        icon: Users,
+        path: "#",
+        disabled: true,
+        tooltip: "In the works",
+      },
     ],
     secondary: [
-      { name: "Statistics", icon: Star, path: "/stats" },
-      { name: "History", icon: Clock, path: "/history" },
-      { name: "Settings", icon: Settings, path: "/settings" },
-      { name: "Log Out", icon: LogOut, onClick: handleLogout, path: "#" },
+      {
+        name: "Statistics",
+        icon: Star,
+        path: "#",
+        disabled: true,
+        tooltip: "In the works",
+      },
+      {
+        name: "History",
+        icon: Clock,
+        path: "#",
+        disabled: true,
+        tooltip: "In the works",
+      },
+      {
+        name: "Settings",
+        icon: Settings,
+        path: "#",
+        disabled: true,
+        tooltip: "In the works",
+      },
+      {
+        name: "Log Out",
+        icon: LogOut,
+        path: "#",
+        disabled: isLoggingOut,
+        handleClick: handleLogout,
+        tooltip: isLoggingOut ? "Loggin out" : "Log Out",
+      },
     ],
+  };
+
+  const renderMenuButton = (item: any) => {
+    if (item.handleClick) {
+      return (
+        <button
+          className="flex w-full items-center gap-2 disabled:opacity-15"
+          onClick={() => item.handleClick()}
+          disabled={item.disabled}
+        >
+          <item.icon className="size-4 shrink-0" />
+          <span className="truncate">{item.name}</span>
+        </button>
+      );
+    }
+
+    return item.disabled ? (
+      <span className="flex w-full items-center gap-2 opacity-50 cursor-not-allowed">
+        <item.icon className="size-4 shrink-0" />
+        <span className="truncate">{item.name}</span>
+      </span>
+    ) : (
+      <Link to={item.path}>
+        <item.icon className="size-4 shrink-0" />
+        <span className="truncate">{item.name}</span>
+      </Link>
+    );
   };
 
   return (
@@ -133,11 +228,19 @@ export function DashboardSidebar() {
                           asChild
                           isActive={location.pathname === item.path}
                           onClick={() => setIsMobileMenuOpen(false)}
+                          disabled={item.disabled}
                         >
-                          <Link to={item.path}>
-                            <item.icon className="size-4" />
-                            <span>{item.name}</span>
-                          </Link>
+                          {item.disabled ? (
+                            <span className="flex w-full items-center gap-2 opacity-50 cursor-not-allowed">
+                              <item.icon className="size-4 shrink-0" />
+                              <span className="truncate">{item.name}</span>
+                            </span>
+                          ) : (
+                            <Link to={item.path}>
+                              <item.icon className="size-4" />
+                              <span>{item.name}</span>
+                            </Link>
+                          )}
                         </SidebarMenuButton>
                       </SidebarMenuItem>
                     ))}
@@ -152,14 +255,13 @@ export function DashboardSidebar() {
                     {navigation.secondary.map((item) => (
                       <SidebarMenuItem key={item.name}>
                         <SidebarMenuButton
-                          asChild
+                          asChild={!item.handleClick}
                           isActive={location.pathname === item.path}
-                          onClick={() => setIsMobileMenuOpen(false)}
+                          tooltip={
+                            state === "collapsed" ? item.name : undefined
+                          }
                         >
-                          <Link to={item.path}>
-                            <item.icon className="size-4" />
-                            <span>{item.name}</span>
-                          </Link>
+                          {renderMenuButton(item)}
                         </SidebarMenuButton>
                       </SidebarMenuItem>
                     ))}
@@ -238,12 +340,22 @@ export function DashboardSidebar() {
                       <SidebarMenuButton
                         asChild
                         isActive={location.pathname === item.path}
-                        tooltip={state === "collapsed" ? item.name : undefined}
+                        tooltip={
+                          state === "collapsed" ? item.tooltip : undefined
+                        }
+                        disabled={item.disabled}
                       >
-                        <Link to={item.path}>
-                          <item.icon className="size-4" />
-                          <span>{item.name}</span>
-                        </Link>
+                        {item.disabled ? (
+                          <span className="flex w-full items-center gap-2 opacity-50 cursor-not-allowed">
+                            <item.icon className="size-4 shrink-0" />
+                            <span className="truncate">{item.name}</span>
+                          </span>
+                        ) : (
+                          <Link to={item.path}>
+                            <item.icon className="size-4" />
+                            <span>{item.name}</span>
+                          </Link>
+                        )}
                       </SidebarMenuButton>
                     </SidebarMenuItem>
                   ))}
@@ -258,14 +370,13 @@ export function DashboardSidebar() {
                   {navigation.secondary.map((item) => (
                     <SidebarMenuItem key={item.name}>
                       <SidebarMenuButton
-                        asChild
+                        asChild={!item.handleClick}
                         isActive={location.pathname === item.path}
-                        tooltip={state === "collapsed" ? item.name : undefined}
+                        tooltip={
+                          state === "collapsed" ? item.tooltip : undefined
+                        }
                       >
-                        <Link to={item.path}>
-                          <item.icon className="size-4" />
-                          <span>{item.name}</span>
-                        </Link>
+                        {renderMenuButton(item)}
                       </SidebarMenuButton>
                     </SidebarMenuItem>
                   ))}
