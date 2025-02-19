@@ -11,9 +11,10 @@ import {
   Settings,
   Star,
   Users,
-  Menu,
   X,
   LogOut,
+  AlignRight,
+  Loader2,
 } from "lucide-react";
 
 import {
@@ -168,8 +169,16 @@ export function DashboardSidebar() {
           role="button"
           tabIndex={item.disabled ? -1 : 0}
         >
-          <item.icon className="size-4 shrink-0" />
-          <span className="truncate">{item.name}</span>
+          {item.name === "Log Out" && isLoggingOut ? (
+            <Loader2 className="size-4 shrink-0 animate-spin" />
+          ) : (
+            <item.icon className="size-4 shrink-0" />
+          )}
+          <span className="truncate">
+            {item.name === "Log Out" && isLoggingOut
+              ? "Logging out..."
+              : item.name}
+          </span>
         </div>
       );
     }
@@ -198,9 +207,9 @@ export function DashboardSidebar() {
         aria-label={isMobileMenuOpen ? "Close menu" : "Open menu"}
       >
         {isMobileMenuOpen ? (
-          <X className="size-6" />
+          <X className="size-10" />
         ) : (
-          <Menu className="size-6" />
+          <AlignRight className="size-10" />
         )}
       </Button>
 
