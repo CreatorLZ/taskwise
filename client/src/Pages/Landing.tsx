@@ -100,7 +100,7 @@ function Landing() {
                   </p>
                 </div>
                 <div className="flex flex-row gap-2 min-[400px]:flex-row ">
-                  <Link to="/register">
+                  <Link to="/login">
                     <Button size="lg" className="relative group w-36 ">
                       <div className="absolute -inset-0.5 bg-gradient-to-r from-purple-600 to-pink-600 rounded-lg blur opacity-30 group-hover:opacity-100 transition duration-1000 group-hover:duration-200" />
                       <div className="relative bg-white dark:bg-gray-950 rounded-lg flex items-center justify-center px-8 text-black w-32">
@@ -282,7 +282,7 @@ function Landing() {
                 </p>
               </div>
               <div className="flex flex-col gap-2 min-[400px]:flex-row">
-                <Link to="/register">
+                <Link to="/login">
                   <Button size="lg" className="relative group">
                     <div className="absolute -inset-0.5 bg-gradient-to-r from-purple-600 to-pink-600 rounded-lg blur opacity-30 group-hover:opacity-100 transition duration-1000 group-hover:duration-200" />
                     <div className="relative bg-white dark:bg-gray-950 rounded-lg flex items-center px-8 text-black">
