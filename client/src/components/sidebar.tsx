@@ -15,6 +15,7 @@ import {
   LogOut,
   AlignRight,
   Loader2,
+  ClipboardList,
 } from "lucide-react";
 
 import {
@@ -108,6 +109,13 @@ export function DashboardSidebar() {
       {
         name: "Tasks",
         icon: ListTodo,
+        path: "#",
+        disabled: true,
+        tooltip: "In the works",
+      },
+      {
+        name: "Todo",
+        icon: ClipboardList,
         path: "#",
         disabled: true,
         tooltip: "In the works",

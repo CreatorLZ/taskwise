@@ -61,7 +61,7 @@ const processTaskNotification = async (
         const title = "Task Reminder";
         const message = `Reminder: "${task.title}" is due ${task.dueTime}`;
         await sendPushNotification(user.fcmToken, title, message, {
-          taskId: task._id.toString(),
+          taskId: task.id.toString(),
           dueDate: task.dueDate.toString(),
         });
         notificationSent = true;

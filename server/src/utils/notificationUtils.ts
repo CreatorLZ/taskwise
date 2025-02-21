@@ -37,8 +37,8 @@ export const sendPushNotification = async (
       },
       webpush: {
         notification: {
-          icon: "/icon-192x192.png",
-          badge: "/icon-192x192.png",
+          icon: "/brain.svg",
+          badge: "/brain.svg",
           vibrate: [200, 100, 200],
           requireInteraction: false,
           actions: [

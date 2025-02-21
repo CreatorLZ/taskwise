@@ -1,3 +1,5 @@
+import type React from "react";
+
 import { useCallback, useMemo, useState } from "react";
 import { Button } from "@/components/ui/button";
 import {
@@ -25,6 +27,7 @@ import {
   Sparkles,
   Star,
   TrendingUp,
+  Search,
 } from "lucide-react";
 import { NewTaskModal } from "@/components/ui/newTask";
 import { TaskCard } from "@/components/taskCard";
@@ -34,6 +37,7 @@ import {
   TooltipTrigger,
   TooltipProvider,
 } from "@/components/ui/tooltip";
+import { Input } from "@/components/ui/input";
 
 import useAuthStore from "@/store/authstore";
 import useTaskStore, {
@@ -44,6 +48,12 @@ import useTaskStore, {
 import TaskSkeletonLoader from "@/components/taskSkeletonLoader";
 import EmptyTaskState from "@/components/emptyTasksState";
 import { LoadingIndicator } from "@/components/loadingIndicator";
+import { ListFilter, ArrowUpDown } from "lucide-react";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
 
 export default function TaskDashboard() {
   // const [prioritizationEnabled, setPrioritizationEnabled] = useState(false);
@@ -52,6 +62,10 @@ export default function TaskDashboard() {
   );
   const [inProgressTasksToShow, setInProgressTasksToShow] = useState(5);
   const [completedTasksToShow, setCompletedTasksToShow] = useState(5);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [sortBy, setSortBy] = useState<"dueDate" | "priority" | "title">(
+    "dueDate"
+  );
 
   // const user = useAuthStore((state) => state.user);
   const userId = useAuthStore((state) => state.userId);
@@ -86,7 +100,6 @@ export default function TaskDashboard() {
         console.warn("Tasks is not an array:", tasks);
         return [];
       }
-      //This properly compares just the date portions of two dates without the time 🌹
 
       const isToday = (dateString: string) => {
         const today = new Date();
@@ -111,23 +124,57 @@ export default function TaskDashboard() {
               task.status
             );
 
-        switch (taskFilter) {
-          case "today":
-            return isCompletedMatch && isToday(task.dueDate);
-          case "upcoming":
-            return isCompletedMatch && new Date(task.dueDate) > new Date(today);
+        const matchesSearch = searchQuery
+          ? task.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+            task.description.toLowerCase().includes(searchQuery.toLowerCase())
+          : true;
+
+        const matchesFilter = (() => {
+          switch (taskFilter) {
+            case "today":
+              return isToday(task.dueDate);
+            case "upcoming":
+              return new Date(task.dueDate) > new Date(today);
+            default:
+              return true;
+          }
+        })();
+
+        return isCompletedMatch && matchesSearch && matchesFilter;
+      });
+
+      // Sort tasks
+      filteredTasks.sort((a, b) => {
+        switch (sortBy) {
+          case "dueDate":
+            return (
+              new Date(a.dueDate).getTime() - new Date(b.dueDate).getTime()
+            );
+          case "priority":
+            const priorityOrder = { High: 3, Medium: 2, Low: 1 };
+            return (
+              (priorityOrder[b.priority as keyof typeof priorityOrder] || 0) -
+              (priorityOrder[a.priority as keyof typeof priorityOrder] || 0)
+            );
+          case "title":
+            return a.title.localeCompare(b.title);
           default:
-            return isCompletedMatch;
+            return 0;
         }
       });
 
-      // Use different counts based on completed status
       const tasksToShow = completed
         ? completedTasksToShow
         : inProgressTasksToShow;
       return filteredTasks.slice(0, tasksToShow);
     },
-    [taskFilter, inProgressTasksToShow, completedTasksToShow]
+    [
+      taskFilter,
+      inProgressTasksToShow,
+      completedTasksToShow,
+      searchQuery,
+      sortBy,
+    ]
   ); // Only recreate when taskFilter changes
 
   // Get the total number of tasks for each category
@@ -296,22 +343,110 @@ export default function TaskDashboard() {
                 <CardHeader>
                   <div className="flex justify-between items-center">
                     <CardTitle>Tasks Overview</CardTitle>
-                    <Select
-                      defaultValue="all"
-                      value={taskFilter}
-                      onValueChange={(value: "all" | "today" | "upcoming") =>
-                        setTaskFilter(value)
-                      }
-                    >
-                      <SelectTrigger className="w-32">
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="all">All Tasks</SelectItem>
-                        <SelectItem value="today">Today</SelectItem>
-                        <SelectItem value="upcoming">Upcoming</SelectItem>
-                      </SelectContent>
-                    </Select>
+                    <div className="flex items-center gap-2">
+                      <Popover>
+                        <TooltipProvider>
+                          <Tooltip>
+                            <TooltipTrigger asChild>
+                              <PopoverTrigger asChild>
+                                <Button
+                                  variant="ghost"
+                                  size="icon"
+                                  className="h-8 w-8"
+                                >
+                                  <Search className="h-4 w-4" />
+                                </Button>
+                              </PopoverTrigger>
+                            </TooltipTrigger>
+                            <TooltipContent>Search tasks</TooltipContent>
+                          </Tooltip>
+                        </TooltipProvider>
+                        <PopoverContent className="w-64 p-2" align="end">
+                          <div className="relative">
+                            <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+                            <Input
+                              placeholder="Search tasks..."
+                              className="pl-8"
+                              value={searchQuery}
+                              onChange={(e) => setSearchQuery(e.target.value)}
+                            />
+                          </div>
+                        </PopoverContent>
+                      </Popover>
+
+                      <Popover>
+                        <TooltipProvider>
+                          <Tooltip>
+                            <TooltipTrigger asChild>
+                              <PopoverTrigger asChild>
+                                <Button
+                                  variant="ghost"
+                                  size="icon"
+                                  className="h-8 w-8"
+                                >
+                                  <ListFilter className="h-4 w-4" />
+                                </Button>
+                              </PopoverTrigger>
+                            </TooltipTrigger>
+                            <TooltipContent>Filter tasks</TooltipContent>
+                          </Tooltip>
+                        </TooltipProvider>
+                        <PopoverContent className="w-48 p-2" align="end">
+                          <Select
+                            defaultValue="all"
+                            value={taskFilter}
+                            onValueChange={(
+                              value: "all" | "today" | "upcoming"
+                            ) => setTaskFilter(value)}
+                          >
+                            <SelectTrigger>
+                              <SelectValue />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="all">All Tasks</SelectItem>
+                              <SelectItem value="today">Today</SelectItem>
+                              <SelectItem value="upcoming">Upcoming</SelectItem>
+                            </SelectContent>
+                          </Select>
+                        </PopoverContent>
+                      </Popover>
+
+                      <Popover>
+                        <TooltipProvider>
+                          <Tooltip>
+                            <TooltipTrigger asChild>
+                              <PopoverTrigger asChild>
+                                <Button
+                                  variant="ghost"
+                                  size="icon"
+                                  className="h-8 w-8"
+                                >
+                                  <ArrowUpDown className="h-4 w-4" />
+                                </Button>
+                              </PopoverTrigger>
+                            </TooltipTrigger>
+                            <TooltipContent>Sort tasks</TooltipContent>
+                          </Tooltip>
+                        </TooltipProvider>
+                        <PopoverContent className="w-48 p-2" align="end">
+                          <Select
+                            value={sortBy}
+                            onValueChange={(
+                              value: "dueDate" | "priority" | "title"
+                            ) => setSortBy(value)}
+                          >
+                            <SelectTrigger>
+                              <SelectValue placeholder="Sort by" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="dueDate">Due Date</SelectItem>
+                              <SelectItem value="priority">Priority</SelectItem>
+                              <SelectItem value="title">Title</SelectItem>
+                            </SelectContent>
+                          </Select>
+                        </PopoverContent>
+                      </Popover>
+                    </div>
                   </div>
                 </CardHeader>
                 <CardContent>
