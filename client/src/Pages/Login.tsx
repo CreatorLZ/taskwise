@@ -17,9 +17,7 @@ import api from "@/utils/api";
 import useAuthStore from "@/store/authstore";
 import { useQueryClient } from "@tanstack/react-query";
 import useTaskStore from "@/store/taskStore";
-// import { getMessaging, getToken } from "firebase/messaging";
-// import { messaging } from "@/firebase.tsx";
-import { useNotifications } from "@/hooks/useNotifications";
+import { requestNotificationPermission } from "@/firebase.ts";
 
 export default function LoginPage() {
   const [isLoading, setIsLoading] = useState(false);
@@ -35,9 +33,6 @@ export default function LoginPage() {
   const setToken = useAuthStore((state) => state.setToken);
   const setTasks = useTaskStore((state) => state.setTasks);
   const setAIEnabled = useTaskStore((state) => state.setAIEnabled);
-
-  const { enableNotifications } = useNotifications();
-
   const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     setIsLoading(true);
@@ -52,9 +47,16 @@ export default function LoginPage() {
       setUserId(userId);
       setAIEnabled(user.taskAnalysisSchedule.enabled);
 
-      // Setup notifications after successful login
-
-      await enableNotifications();
+      // Request notification permission and get FCM token
+      const fcmToken = await requestNotificationPermission();
+      if (fcmToken) {
+        // Update user's FCM token in backend
+        await api.put("/users/update-fcm-token", {
+          userId,
+          fcmToken,
+        });
+        console.log(fcmToken);
+      }
 
       const clearTasks = useTaskStore.getState().clearTasks;
       clearTasks();
@@ -69,7 +71,7 @@ export default function LoginPage() {
         },
       });
 
-      // Navigate to the homepage
+      // Navigate to user dashboard
       navigate("/dashboard");
     } catch (error: any) {
       // Handle API errors

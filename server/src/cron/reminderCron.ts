@@ -1,8 +1,9 @@
 import cron from "node-cron";
 import Task from "../models/Task";
-import { sendPushNotification } from "../utils/notificationUtils";
+
 import nodemailer from "nodemailer";
 import { addMinutes } from "date-fns";
+import { sendPushNotification } from "../utils/notificationUtils";
 
 // Configure Nodemailer transport for sending emails
 const transporter = nodemailer.createTransport({
@@ -59,7 +60,7 @@ const processTaskNotification = async (
     if (user.fcmToken) {
       try {
         const title = "Task Reminder";
-        const message = `Reminder: "${task.title}" is due ${task.dueTime}`;
+        const message = `Reminder: "${task.title}" is due ${task.dueDate}`;
         await sendPushNotification(user.fcmToken, title, message, {
           taskId: task.id.toString(),
           dueDate: task.dueDate.toString(),

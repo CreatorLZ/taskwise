@@ -1,4 +1,3 @@
-// routes/userRoutes.ts
 import express from "express";
 import { authenticateUser } from "../middleware/authMiddleware";
 import User from "../models/User";
@@ -19,10 +18,17 @@ router.put(
     try {
       const { userId, fcmToken } = (req as any).body;
 
-      // Update the user's FCM token
-      await User.findByIdAndUpdate(userId, { fcmToken });
+      // Update the user's FCM token and return the updated user
+      const updatedUser = await User.findByIdAndUpdate(
+        userId,
+        { fcmToken },
+        { new: true } // This option returns the updated document
+      );
 
-      res.json({ message: "FCM token updated successfully" });
+      res.json({
+        message: "FCM token updated successfully",
+        user: updatedUser,
+      });
     } catch (error) {
       console.error("Error updating FCM token:", error);
       res.status(500).json({ message: "Error updating FCM token" });
