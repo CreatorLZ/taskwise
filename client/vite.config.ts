@@ -43,6 +43,9 @@ export default defineConfig({
       },
     }),
   ],
+  server: {
+    hmr: true,
+  },
   base: "/",
   publicDir: "public",
   build: {

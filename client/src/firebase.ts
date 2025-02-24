@@ -1,6 +1,6 @@
 // firebase.ts
 import { initializeApp } from "firebase/app";
-import { getMessaging, getToken, onMessage } from "firebase/messaging";
+import { getMessaging, getToken } from "firebase/messaging";
 
 const firebaseConfig = {
   apiKey: import.meta.env.VITE_FIREBASE_API_KEY,
@@ -40,13 +40,5 @@ export const requestNotificationPermission = async () => {
     return null;
   }
 };
-
-// Handle foreground messages
-export const onMessageListener = () =>
-  new Promise((resolve) => {
-    onMessage(messaging, (payload) => {
-      resolve(payload);
-    });
-  });
 
 export default app;

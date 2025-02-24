@@ -1,6 +1,7 @@
 import { initializeApp, cert } from "firebase-admin/app";
 import { getMessaging } from "firebase-admin/messaging";
 import { ServiceAccount } from "firebase-admin";
+import * as admin from "firebase-admin";
 
 // Initialize Firebase Admin
 const serviceAccount = {
@@ -20,12 +21,12 @@ const serviceAccount = {
 } as ServiceAccount;
 
 // Initialize the app
-initializeApp({
-  credential: cert(serviceAccount),
+admin.initializeApp({
+  credential: admin.credential.cert(serviceAccount),
 });
 
 // Get messaging instance
-const messaging = getMessaging();
+const messaging = admin.messaging();
 
 // Function to send push notification
 export const sendPushNotification = async (

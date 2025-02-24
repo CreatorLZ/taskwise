@@ -1,5 +1,5 @@
 import type React from "react";
-
+// import { toast } from "sonner";
 import { useCallback, useMemo, useState } from "react";
 import { Button } from "@/components/ui/button";
 import {
@@ -54,6 +54,7 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
+// import { onMessageListener } from "@/firebase";
 
 export default function TaskDashboard() {
   // const [prioritizationEnabled, setPrioritizationEnabled] = useState(false);
@@ -222,7 +223,32 @@ export default function TaskDashboard() {
     setCompletedTasksToShow((prev) => prev + 5);
   };
 
-  // const aiPrioritizeMutation = useAIPrioritizeTasksMutation();
+  // useEffect(() => {
+  //   // Set up message listener
+  //   const messageListener = async () => {
+  //     try {
+  //       onMessageListener()
+  //         .then((payload) => {
+  //           console.log("Received foreground message checking :", payload);
+
+  //           // Check if payload and notification exist
+  //           if (payload?.notification) {
+  //             toast(payload.notification.title, {
+  //               description: payload.notification.body,
+  //             });
+  //           }
+  //         })
+  //         .catch((err) => {
+  //           console.error("Error receiving message:", err);
+  //         });
+  //     } catch (error) {
+  //       console.error("Error in message listener:", error);
+  //     }
+  //   };
+
+  //   // Start listening for messages
+  //   messageListener();
+  // }, []);
   return (
     <TooltipProvider>
       {" "}
