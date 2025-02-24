@@ -54,10 +54,10 @@ app.listen(port, () => {
   console.log(`Server is running on port ${port}`);
 });
 
-const startServer = async () => {
-  await taskAnalysisScheduler.restoreSchedules();
-};
+// const startServer = async () => {
+//   await taskAnalysisScheduler.restoreSchedules();
+// };
 
-startServer();
+// startServer();
 
 export default app;
