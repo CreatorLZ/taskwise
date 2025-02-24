@@ -37,12 +37,21 @@ export const sendPushNotification = async (
 ) => {
   try {
     const message = {
+      token: fcmToken,
       notification: {
         title,
         body,
+        icon: "/brain.png",
+        badge: "/brain.png",
       },
-      data: data || {},
-      token: fcmToken,
+      data: { ...data, icon: "/brain.png" },
+
+      webpush: {
+        notification: {
+          icon: "/brain.png",
+          badge: "/brain.png",
+        },
+      },
     };
 
     const response = await messaging.send(message);
