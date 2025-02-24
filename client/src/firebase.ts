@@ -1,6 +1,11 @@
 // firebase.ts
 import { initializeApp } from "firebase/app";
-import { getMessaging, getToken } from "firebase/messaging";
+import {
+  getMessaging,
+  getToken,
+  MessagePayload,
+  onMessage,
+} from "firebase/messaging";
 
 const firebaseConfig = {
   apiKey: import.meta.env.VITE_FIREBASE_API_KEY,
@@ -39,6 +44,21 @@ export const requestNotificationPermission = async () => {
     console.error("An error occurred while retrieving token:", err);
     return null;
   }
+};
+
+// export const onMessageListener = () =>
+//   new Promise<MessagePayload>((resolve) => {
+//     onMessage(messaging, (payload) => {
+//       resolve(payload);
+//     });
+//   });
+
+export const onMessageListener = (
+  callback: (payload: MessagePayload) => void
+) => {
+  onMessage(messaging, (payload) => {
+    callback(payload);
+  });
 };
 
 export default app;

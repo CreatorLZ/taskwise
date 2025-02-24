@@ -11,6 +11,18 @@ import { ReactQueryDevtools } from "@tanstack/react-query-devtools";
 import ProtectedRoute from "./ProtectedRoute.tsx";
 import { DashboardLayout } from "./components/dashboardLayout.tsx";
 import PublicRoute from "./PublicRoute.tsx";
+import { toast, Toaster } from "sonner";
+import { onMessageListener } from "./firebase.ts";
+
+onMessageListener((payload) => {
+  console.log("Message received. ", payload);
+  toast(
+    <div>
+      <h1>{payload?.notification?.title}</h1>
+      <p>{payload?.notification?.body}</p>
+    </div>
+  );
+});
 
 // Register Firebase Service Worker
 if ("serviceWorker" in navigator) {
@@ -67,6 +79,7 @@ createRoot(document.getElementById("root")!).render(
   <StrictMode>
     <QueryClientProvider client={queryClient}>
       <RouterProvider router={router} />
+      <Toaster />
       <ReactQueryDevtools initialIsOpen={false} />
     </QueryClientProvider>
   </StrictMode>
