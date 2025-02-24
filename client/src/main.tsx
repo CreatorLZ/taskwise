@@ -13,15 +13,25 @@ import { DashboardLayout } from "./components/dashboardLayout.tsx";
 import PublicRoute from "./PublicRoute.tsx";
 import { toast, Toaster } from "sonner";
 import { onMessageListener } from "./firebase.ts";
+import { Bell } from "lucide-react";
+
+// onMessageListener((payload) => {
+//   console.log("Message received. ", payload);
+//   toast(
+//     <div>
+//       <h1>{payload?.notification?.title}</h1>
+//       <p>{payload?.notification?.body}</p>
+//     </div>
+//   );
+// });
 
 onMessageListener((payload) => {
   console.log("Message received. ", payload);
-  toast(
-    <div>
-      <h1>{payload?.notification?.title}</h1>
-      <p>{payload?.notification?.body}</p>
-    </div>
-  );
+  toast(payload?.notification?.title, {
+    description: payload?.notification?.body,
+    icon: <Bell className="size-5" />,
+    duration: 5000,
+  });
 });
 
 // Register Firebase Service Worker

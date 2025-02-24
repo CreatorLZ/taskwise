@@ -46,13 +46,6 @@ export const requestNotificationPermission = async () => {
   }
 };
 
-// export const onMessageListener = () =>
-//   new Promise<MessagePayload>((resolve) => {
-//     onMessage(messaging, (payload) => {
-//       resolve(payload);
-//     });
-//   });
-
 export const onMessageListener = (
   callback: (payload: MessagePayload) => void
 ) => {
