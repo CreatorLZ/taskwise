@@ -29,5 +29,5 @@ messaging.onBackgroundMessage((payload) => {
     icon: "/brain.png",
   };
 
-  self.registration.showNotification(notificationTitle, notificationOptions);
+  // self.registration.showNotification(notificationTitle, notificationOptions);
 });
