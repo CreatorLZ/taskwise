@@ -37,21 +37,51 @@ export const sendPushNotification = async (
 ) => {
   try {
     const message = {
-      notification: {
-        title,
-        body,
-        // icon: "/brain.png",
-        // badge: "/brain.png",
+      android: {
+        notification: {
+          icon: "brain",
+          color: "#4285F4",
+          clickAction: "OPEN_DASHBOARD_ACTIVITY",
+          channelId: "task_reminders",
+        },
+      },
+      webpush: {
+        notification: {
+          title, // Title moved here
+          body, // Body moved here
+          icon: "/brain.png",
+          badge: "/badge-icon.png",
+          actions: [
+            {
+              action: "view",
+              title: "View Task",
+            },
+            {
+              action: "complete",
+              title: "Mark Complete",
+            },
+          ],
+          // This ensures the notification is handled properly
+          requireInteraction: true,
+          // Add a tag to prevent duplicate notifications for the same task
+          tag: data?.taskId || "task-reminder",
+          // Vibration pattern (milliseconds)
+          vibrate: [200, 100, 200],
+          data: {
+            url: "/dashboard", // URL to navigate to when notification is clicked
+          },
+        },
+        fcmOptions: {
+          link: "/dashboard",
+        },
       },
       token: fcmToken,
-      data: { ...data, icon: "/brain.png" },
-
-      // webpush: {
-      //   notification: {
-      //     icon: "/brain.png",
-      //     badge: "/brain.png",
-      //   },
-      // },
+      data: {
+        ...data,
+        url: "/dashboard",
+        taskId: data?.taskId || "",
+        clickAction: "OPEN_DASHBOARD",
+      },
     };
 
     const response = await messaging.send(message);

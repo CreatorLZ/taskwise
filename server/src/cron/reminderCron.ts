@@ -60,10 +60,12 @@ const processTaskNotification = async (
     if (user.fcmToken) {
       try {
         const title = "Task Reminder";
-        const message = `Reminder: "${task.title}" is due ${task.dueDate}`;
+        const message = `Reminder: "${
+          task.title
+        }" is due ${task.dueDate.toLocaleString()}`;
         await sendPushNotification(user.fcmToken, title, message, {
           taskId: task.id.toString(),
-          dueDate: task.dueDate.toString(),
+          dueDate: task.dueDate.toLocaleString(),
         });
         notificationSent = true;
         console.log(`Push notification sent for task "${task.title}"`);
