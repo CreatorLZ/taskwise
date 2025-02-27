@@ -15,15 +15,7 @@ import { toast, Toaster } from "sonner";
 import { onMessageListener } from "./firebase.ts";
 import { Bell } from "lucide-react";
 
-// onMessageListener((payload) => {
-//   console.log("Message received. ", payload);
-//   toast(
-//     <div>
-//       <h1>{payload?.notification?.title}</h1>
-//       <p>{payload?.notification?.body}</p>
-//     </div>
-//   );
-// });
+// Firebase Cloud Messaging foreground message handler
 
 onMessageListener((payload) => {
   console.log("Message received. ", payload);
