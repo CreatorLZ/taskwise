@@ -18,20 +18,31 @@ const firebaseConfig = {
 firebase.initializeApp(firebaseConfig);
 const messaging = firebase.messaging();
 
-// messaging.onBackgroundMessage((payload) => {
-//   console.log(
-//     "[firebase-messaging-sw.js] Received background message: ",
-//     payload
-//   );
-//   const notificationTitle = payload.notification.title;
-//   const notificationOptions = {
-//     body: payload.notification.body,
-//     icon: "/brain (4).png",
-//   };
+// handle background message
+messaging.onBackgroundMessage(function (payload) {
+  console.log(
+    "[firebase-messaging-sw.js] Received background message ",
+    payload
+  );
 
-//   self.registration.showNotification(notificationTitle, notificationOptions);
-// });
+  const notificationTitle = payload.notification.title;
+  const notificationOptions = {
+    body: payload.notification.body,
+    icon: "/brain (4).png",
+    badge: "/brain (4).png",
+    data: payload.data || {},
+    actions: [
+      {
+        action: "view",
+        title: "View",
+      },
+    ],
+  };
 
+  self.registration.showNotification(notificationTitle, notificationOptions);
+});
+
+// handle notification click
 self.addEventListener("push", function (event) {
   if (event.data) {
     const payload = event.data.json();

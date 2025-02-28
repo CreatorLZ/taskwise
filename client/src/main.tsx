@@ -41,9 +41,9 @@ onMessageListener((payload) => {
       navigator.serviceWorker.ready.then((registration) => {
         // Create notification through service worker
         registration.showNotification(
-          payload?.notification?.title || "Notification",
+          payload?.notification?.title || "Taskwise",
           {
-            body: payload?.notification?.body,
+            body: payload?.notification?.body || "No Body",
             icon: "/brain (4).png",
             badge: "/brain (4).png",
             data: payload.data || {},
