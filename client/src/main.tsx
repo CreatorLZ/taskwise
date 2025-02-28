@@ -15,6 +15,7 @@ import { toast, Toaster } from "sonner";
 import { onMessageListener } from "./firebase.ts";
 import { Bell } from "lucide-react";
 import { HelmetProvider } from "react-helmet-async";
+import { Analytics } from "@vercel/analytics/react";
 
 // Firebase Cloud Messaging foreground message handler
 
@@ -84,6 +85,7 @@ createRoot(document.getElementById("root")!).render(
       <QueryClientProvider client={queryClient}>
         <RouterProvider router={router} />
         <Toaster />
+        <Analytics />
         <ReactQueryDevtools initialIsOpen={false} />
       </QueryClientProvider>
     </HelmetProvider>
