@@ -14,6 +14,7 @@ import PublicRoute from "./PublicRoute.tsx";
 import { toast, Toaster } from "sonner";
 import { onMessageListener } from "./firebase.ts";
 import { Bell } from "lucide-react";
+import { HelmetProvider } from "react-helmet-async";
 
 // Firebase Cloud Messaging foreground message handler
 
@@ -79,10 +80,12 @@ const queryClient = new QueryClient();
 
 createRoot(document.getElementById("root")!).render(
   <StrictMode>
-    <QueryClientProvider client={queryClient}>
-      <RouterProvider router={router} />
-      <Toaster />
-      <ReactQueryDevtools initialIsOpen={false} />
-    </QueryClientProvider>
+    <HelmetProvider>
+      <QueryClientProvider client={queryClient}>
+        <RouterProvider router={router} />
+        <Toaster />
+        <ReactQueryDevtools initialIsOpen={false} />
+      </QueryClientProvider>
+    </HelmetProvider>
   </StrictMode>
 );
