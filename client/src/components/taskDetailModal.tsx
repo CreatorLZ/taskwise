@@ -83,7 +83,6 @@ export function TaskDetailModal({
   const handleDelete = async () => {
     try {
       await deleteTaskMutation.mutateAsync(task._id);
-      // setShowDeleteAlert(false);
       onClose(); // Close modal after successful deletion
     } catch (error) {
       console.error("Failed to delete task:", error);
@@ -336,12 +335,19 @@ export function TaskDetailModal({
             <div className="flex flex-col sm:flex-row gap-2">
               <Button
                 variant="destructive"
-                // onClick={() => setShowDeleteAlert(true)}
                 onClick={handleDelete}
                 disabled={isProcessingUpdate || isProcessingDelete}
                 className="w-full sm:w-auto"
               >
-                <Trash2 className="w-4 h-4 mr-2" /> Delete
+                {isProcessingDelete ? (
+                  <>
+                    <Loader className="mr-2 h-4 w-4 animate-spin" /> Deleting...
+                  </>
+                ) : (
+                  <>
+                    <Trash2 className="w-4 h-4 mr-2" /> Delete
+                  </>
+                )}
               </Button>
               <Button
                 variant={task.completed ? "secondary" : "default"}
