@@ -17,55 +17,13 @@ import { Bell } from "lucide-react";
 
 // Firebase Cloud Messaging foreground message handler
 
-// onMessageListener((payload) => {
-//   console.log("Message received. ", payload);
-//   toast(payload?.notification?.title, {
-//     description: payload?.notification?.body,
-//     icon: <Bell className="size-5" />,
-//     duration: 5000,
-//   });
-// });
-
-// In main.tsx, replace your current onMessageListener code with this:
 onMessageListener((payload) => {
   console.log("Message received. ", payload);
-
-  // Check if we're on Android
-  if (/Android/i.test(navigator.userAgent)) {
-    // For Android, use the service worker to show notifications
-    if (
-      "serviceWorker" in navigator &&
-      "Notification" in window &&
-      Notification.permission === "granted"
-    ) {
-      navigator.serviceWorker.ready.then((registration) => {
-        // Create notification through service worker
-        registration.showNotification(
-          payload?.notification?.title || "Taskwise",
-          {
-            body: payload?.notification?.body || "No Body",
-            icon: "/brain (4).png",
-            badge: "/brain (4).png",
-            data: payload.data || {},
-          }
-        );
-      });
-    } else {
-      // Fallback to toast if notifications not available
-      toast(payload?.notification?.title, {
-        description: payload?.notification?.body,
-        icon: <Bell className="size-5" />,
-        duration: 5000,
-      });
-    }
-  } else {
-    // For non-Android platforms, use toast
-    toast(payload?.notification?.title, {
-      description: payload?.notification?.body,
-      icon: <Bell className="size-5" />,
-      duration: 5000,
-    });
-  }
+  toast(payload?.notification?.title, {
+    description: payload?.notification?.body,
+    icon: <Bell className="size-5" />,
+    duration: 5000,
+  });
 });
 
 // Register Firebase Service Worker
