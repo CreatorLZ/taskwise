@@ -1,13 +1,9 @@
 import useAuthStore from "@/store/authstore";
 import axios from "axios";
 
-const endpoints = [
-  "http://localhost:3000/api", // for local development
-  "https://taskwise-wibu.onrender.com/api",
-];
-
 const api = axios.create({
-  baseURL: endpoints[2], // Change the index based on the environment
+  // baseURL: "http://localhost:3000/api", // for local development
+  baseURL: "https://taskwise-wibu.onrender.com/api",
 });
 
 api.interceptors.request.use((config) => {
