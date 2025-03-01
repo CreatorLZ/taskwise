@@ -62,7 +62,7 @@ export function useFetchTasks(userId: string) {
     queryKey: ["tasks", userId],
     queryFn: async () => {
       const response = await api.get(`/tasks/user/${userId}`);
-      setTasks(response.data);
+      setTasks(Array.isArray(response.data) ? response.data : []);
       // console.log(response.data);
       return response.data;
     },
