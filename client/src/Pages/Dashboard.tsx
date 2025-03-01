@@ -56,7 +56,6 @@ import {
 } from "@/components/ui/popover";
 
 export default function TaskDashboard() {
-  console.log("TaskDashboard rerendered");
   const [taskFilter, setTaskFilter] = useState<"all" | "today" | "upcoming">(
     "all"
   );
