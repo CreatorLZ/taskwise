@@ -3,16 +3,31 @@ import Task from "../models/Task";
 
 const client = new HfInference(process.env.HUGGINGFACE_API_KEY);
 
+// in-memory cache implementation
+const responseCache = new Map();
+const CACHE_TTL = 3600000; // 1 hour in milliseconds
+
 export const createTaskFromNLP = async (command: string, userId: string) => {
   try {
     if (!userId) {
       throw new Error("userId is required but was not provided");
     }
 
+    // Generate and check cache
+    const cacheKey = `${command}-${userId}`;
+    if (responseCache.has(cacheKey)) {
+      const cached = responseCache.get(cacheKey);
+      if (Date.now() - cached.timestamp < CACHE_TTL) {
+        console.log("Cache hit for command:", command);
+        return cached.data;
+      }
+    }
+
     const currentDate = new Date();
     const currentDateISO = currentDate.toISOString();
 
-    const prompt = `Convert this command into a JSON task object. Return only valid JSON:
+    // MODIFIED: Simplified prompt for faster processing
+    const prompt = `Convert this command into a JSON task object. Return ONLY valid JSON without any explanation:
 Command: ${command}
 
 JSON format:
@@ -29,53 +44,128 @@ JSON format:
 
 Use ${currentDateISO} as today's date. Set reminderTime 1h before dueDate.`;
 
-    const response = await client.textGeneration({
-      model: "deepseek-ai/DeepSeek-R1-Distill-Qwen-32B",
-      inputs: prompt,
-      parameters: {
-        max_new_tokens: 500,
-        temperature: 0.6,
-        return_full_text: false,
-      },
-    });
+    const response = (await Promise.race([
+      client.textGeneration({
+        // Changed to smaller, faster model
+        model: "mistralai/Mistral-7B-Instruct-v0.2", // Changed from deepseek-ai/DeepSeek-R1-Distill-Qwen-32B
+        inputs: prompt,
+        parameters: {
+          // Optimized generation parameters
+          max_new_tokens: 300,
+          temperature: 0.3,
+          return_full_text: false,
+          top_p: 0.95,
+        },
+      }),
+      new Promise((_, reject) =>
+        setTimeout(() => reject(new Error("Model inference timeout")), 15000)
+      ),
+    ])) as { generated_text: string };
 
     let output = response.generated_text;
     console.log("Model response:", output);
 
-    // Extract JSON object using regex
-    const jsonRegex = /\{[\s\S]*?\{[\s\S]*?\}[\s\S]*?\}/g;
-    // Find all JSON-like structures
-    const matches = output.match(jsonRegex);
-
-    if (!matches) {
-      // Try a simpler regex if the nested match fails
-      const simpleJsonRegex = /\{[\s\S]*?\}/g;
-      const simpleMatches = output.match(simpleJsonRegex);
-      if (!simpleMatches) {
-        throw new Error("No JSON object found in response");
-      }
-      // Take the longest match as it's likely the complete JSON
-      const jsonStr = simpleMatches.reduce((a, b) =>
-        a.length > b.length ? a : b
+    // JSON parsing approach
+    try {
+      // First try: direct JSON parsing
+      const structuredTask = JSON.parse(output.trim());
+      const task = await createTaskFromData(
+        structuredTask,
+        userId,
+        currentDate
       );
+
+      //Cache successful result
+      responseCache.set(cacheKey, {
+        timestamp: Date.now(),
+        data: task,
+      });
+
+      return task;
+    } catch (error) {
+      console.log("Direct JSON parsing failed, trying extraction...");
+
+      // Second try: Find JSON by bracket matching
+      const jsonStart = output.indexOf("{");
+      const jsonEnd = output.lastIndexOf("}");
+
+      if (jsonStart >= 0 && jsonEnd >= 0) {
+        try {
+          const jsonStr = output.substring(jsonStart, jsonEnd + 1);
+          const structuredTask = JSON.parse(jsonStr);
+          const task = await createTaskFromData(
+            structuredTask,
+            userId,
+            currentDate
+          );
+
+          //  Cache successful result
+          responseCache.set(cacheKey, {
+            timestamp: Date.now(),
+            data: task,
+          });
+
+          return task;
+        } catch (innerError) {
+          console.error("Failed to parse extracted JSON");
+        }
+      }
+
+      // If everything fails, fall back to the original regex approach😑😑
+      const jsonRegex = /\{[\s\S]*?\{[\s\S]*?\}[\s\S]*?\}/g;
+      const matches = output.match(jsonRegex);
+
+      if (!matches) {
+        const simpleJsonRegex = /\{[\s\S]*?\}/g;
+        const simpleMatches = output.match(simpleJsonRegex);
+        if (!simpleMatches) {
+          throw new Error("No JSON object found in response");
+        }
+        const jsonStr = simpleMatches.reduce((a, b) =>
+          a.length > b.length ? a : b
+        );
+        try {
+          const structuredTask = JSON.parse(jsonStr);
+          const task = await createTaskFromData(
+            structuredTask,
+            userId,
+            currentDate
+          );
+
+          // Cache successful result
+          responseCache.set(cacheKey, {
+            timestamp: Date.now(),
+            data: task,
+          });
+
+          return task;
+        } catch (error) {
+          console.error("Failed to parse simple JSON match:", jsonStr);
+          throw new Error("Invalid JSON format in response");
+        }
+      }
+
+      const jsonStr = matches.reduce((a, b) => (a.length > b.length ? a : b));
+
       try {
         const structuredTask = JSON.parse(jsonStr);
-        return await createTaskFromData(structuredTask, userId, currentDate);
+        const task = await createTaskFromData(
+          structuredTask,
+          userId,
+          currentDate
+        );
+
+        //Cache successful result
+        responseCache.set(cacheKey, {
+          timestamp: Date.now(),
+          data: task,
+        });
+
+        return task;
       } catch (error) {
-        console.error("Failed to parse simple JSON match:", jsonStr);
+        console.error("Failed to parse JSON:", jsonStr);
         throw new Error("Invalid JSON format in response");
       }
-    }
-
-    // Take the longest match as it's likely the complete JSON
-    const jsonStr = matches.reduce((a, b) => (a.length > b.length ? a : b));
-
-    try {
-      const structuredTask = JSON.parse(jsonStr);
-      return await createTaskFromData(structuredTask, userId, currentDate);
-    } catch (error) {
-      console.error("Failed to parse JSON:", jsonStr);
-      throw new Error("Invalid JSON format in response");
     }
   } catch (error: any) {
     console.error("Error creating task from NLP:", error);
@@ -83,7 +173,6 @@ Use ${currentDateISO} as today's date. Set reminderTime 1h before dueDate.`;
   }
 };
 
-// Helper function to create task from parsed data
 const createTaskFromData = async (
   structuredTask: any,
   userId: string,
