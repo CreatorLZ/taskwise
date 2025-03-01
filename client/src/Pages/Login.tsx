@@ -18,6 +18,8 @@ import useAuthStore from "@/store/authstore";
 import { useQueryClient } from "@tanstack/react-query";
 import useTaskStore from "@/store/taskStore";
 import { requestNotificationPermission } from "@/firebase.ts";
+import GoogleSignInButton from "@/components/googleSignInButton";
+import { Separator } from "@/components/ui/separator";
 
 export default function LoginPage() {
   const [isLoading, setIsLoading] = useState(false);
@@ -33,6 +35,7 @@ export default function LoginPage() {
   const setToken = useAuthStore((state) => state.setToken);
   const setTasks = useTaskStore((state) => state.setTasks);
   const setAIEnabled = useTaskStore((state) => state.setAIEnabled);
+
   const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     setIsLoading(true);
@@ -83,6 +86,11 @@ export default function LoginPage() {
     }
   };
 
+  // Handle Google sign-in error
+  const handleGoogleError = (error: string) => {
+    setErrorMessage(error);
+  };
+
   return (
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-primary/5 via-background to-primary/5 p-4">
       <Card className="w-full max-w-md">
@@ -95,52 +103,68 @@ export default function LoginPage() {
             Enter your credentials to access your account
           </CardDescription>
         </CardHeader>
-        <form onSubmit={handleSubmit}>
-          <CardContent className="space-y-4">
-            <div className="space-y-2">
-              <Label htmlFor="email">Email</Label>
-              <Input
-                id="email"
-                type="email"
-                placeholder="m@example.com"
-                required
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-              />
+        <CardContent className="space-y-4">
+          {/* Google Sign-In Button */}
+          <GoogleSignInButton onError={handleGoogleError} />
+
+          <div className="relative">
+            <div className="absolute inset-0 flex items-center">
+              <Separator className="w-full" />
             </div>
-            <div className="space-y-2">
-              <Label htmlFor="password">Password</Label>
-              <Input
-                id="password"
-                type="password"
-                required
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-              />
+            <div className="relative flex justify-center text-xs uppercase">
+              <span className="bg-background px-2 text-muted-foreground">
+                Or continue with email
+              </span>
             </div>
-            {errorMessage && (
-              <p className="text-red-500 text-sm">{errorMessage}</p>
-            )}
-          </CardContent>
-          <CardFooter className="flex flex-col space-y-4">
-            <Button type="submit" className="w-full" disabled={isLoading}>
-              {isLoading ? (
-                <>
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  Logging in...
-                </>
-              ) : (
-                "Log in"
+          </div>
+
+          <form onSubmit={handleSubmit}>
+            <div className="space-y-4">
+              <div className="space-y-2">
+                <Label htmlFor="email">Email</Label>
+                <Input
+                  id="email"
+                  type="email"
+                  placeholder="m@example.com"
+                  required
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="password">Password</Label>
+                <Input
+                  id="password"
+                  type="password"
+                  required
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                />
+              </div>
+              {errorMessage && (
+                <p className="text-red-500 text-sm">{errorMessage}</p>
               )}
-            </Button>
-            <p className="text-sm text-center text-muted-foreground">
-              Don&apos;t have an account?{" "}
-              <Link to="/register" className="text-primary hover:underline">
-                Register
-              </Link>
-            </p>
-          </CardFooter>
-        </form>
+              <Button type="submit" className="w-full" disabled={isLoading}>
+                {isLoading ? (
+                  <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    Logging in...
+                  </>
+                ) : (
+                  "Log in"
+                )}
+              </Button>
+            </div>
+          </form>
+        </CardContent>
+        <CardFooter>
+          <p className="text-sm text-center w-full text-muted-foreground">
+            Don&apos;t have an account?{" "}
+            <Link to="/register" className="text-primary hover:underline">
+              Register
+            </Link>
+          </p>
+        </CardFooter>
       </Card>
     </div>
   );

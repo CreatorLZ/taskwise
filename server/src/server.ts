@@ -3,6 +3,7 @@ import cors from "cors"; // Import CORS middleware
 import { config } from "dotenv";
 import taskRoutes from "./routes/taskRoutes";
 import authRoutes from "./routes/authRoutes";
+import googleAuthRoutes from "./routes/googleAuthRoutes";
 import nlpRoutes from "./routes/nlp";
 import prioritizeTasks from "./routes/prioritizeTasks";
 import taskAnalysis from "./routes/taskAnalysis";
@@ -35,6 +36,7 @@ app.use(
 // Register the routes
 app.use("/api/tasks", taskRoutes);
 app.use("/api/auth", authRoutes);
+app.use("/api/auth", googleAuthRoutes);
 app.use("/api", nlpRoutes);
 app.use("/api", prioritizeTasks);
 app.use("/api", taskAnalysis);

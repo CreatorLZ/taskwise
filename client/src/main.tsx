@@ -16,7 +16,7 @@ import { onMessageListener } from "./firebase.ts";
 import { Bell } from "lucide-react";
 import { HelmetProvider } from "react-helmet-async";
 import { Analytics } from "@vercel/analytics/react";
-
+import { GoogleOAuthProvider } from "@react-oauth/google";
 // Firebase Cloud Messaging foreground message handler
 
 onMessageListener((payload) => {
@@ -81,13 +81,15 @@ const queryClient = new QueryClient();
 
 createRoot(document.getElementById("root")!).render(
   <StrictMode>
-    <HelmetProvider>
-      <QueryClientProvider client={queryClient}>
-        <RouterProvider router={router} />
-        <Toaster />
-        <Analytics />
-        <ReactQueryDevtools initialIsOpen={false} />
-      </QueryClientProvider>
-    </HelmetProvider>
+    <GoogleOAuthProvider clientId={import.meta.env.VITE_GOOGLE_CLIENT_ID}>
+      <HelmetProvider>
+        <QueryClientProvider client={queryClient}>
+          <RouterProvider router={router} />
+          <Toaster />
+          <Analytics />
+          <ReactQueryDevtools initialIsOpen={false} />
+        </QueryClientProvider>
+      </HelmetProvider>
+    </GoogleOAuthProvider>
   </StrictMode>
 );

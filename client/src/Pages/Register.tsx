@@ -14,6 +14,8 @@ import {
 } from "@/components/ui/card";
 import { Brain, Loader2 } from "lucide-react";
 import api from "@/utils/api";
+import GoogleSignInButton from "@/components/googleSignInButton";
+import { Separator } from "@/components/ui/separator";
 
 export default function RegisterPage() {
   const [isLoading, setIsLoading] = useState(false);
@@ -59,6 +61,10 @@ export default function RegisterPage() {
       setIsLoading(false);
     }
   };
+  // Handle Google sign-in error
+  const handleGoogleError = (error: string) => {
+    setErrorMessage(error);
+  };
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-primary/5 via-background to-primary/5 p-4">
@@ -72,58 +78,75 @@ export default function RegisterPage() {
             Create your account and start managing tasks with AI assistance
           </CardDescription>
         </CardHeader>
-        <form onSubmit={handleSubmit}>
-          <CardContent className="space-y-4">
-            <div className="space-y-2">
-              <Label htmlFor="name">Full Name</Label>
-              <Input id="name" name="name" placeholder="John Doe" required />
+        <CardContent className="space-y-4">
+          {/* Google Sign-In Button */}
+          <GoogleSignInButton onError={handleGoogleError} />
+
+          <div className="relative">
+            <div className="absolute inset-0 flex items-center">
+              <Separator className="w-full" />
             </div>
-            <div className="space-y-2">
-              <Label htmlFor="email">Email</Label>
-              <Input
-                id="email"
-                name="email"
-                type="email"
-                placeholder="m@example.com"
-                required
-              />
+            <div className="relative flex justify-center text-xs uppercase">
+              <span className="bg-background px-2 text-muted-foreground">
+                Or register with email
+              </span>
             </div>
-            <div className="space-y-2">
-              <Label htmlFor="password">Password</Label>
-              <Input id="password" name="password" type="password" required />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="confirm-password">Confirm Password</Label>
-              <Input
-                id="confirm-password"
-                name="confirm-password"
-                type="password"
-                required
-              />
-            </div>
-            {errorMessage && (
-              <p className="text-red-500 text-sm">{errorMessage}</p>
-            )}
-          </CardContent>
-          <CardFooter className="flex flex-col space-y-4">
-            <Button type="submit" className="w-full" disabled={isLoading}>
-              {isLoading ? (
-                <>
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  Creating your account...
-                </>
-              ) : (
-                "Create account"
+          </div>
+
+          <form onSubmit={handleSubmit}>
+            <div className="space-y-4">
+              <div className="space-y-2">
+                <Label htmlFor="name">Full Name</Label>
+                <Input id="name" name="name" placeholder="John Doe" required />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="email">Email</Label>
+                <Input
+                  id="email"
+                  name="email"
+                  type="email"
+                  placeholder="m@example.com"
+                  required
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="password">Password</Label>
+                <Input id="password" name="password" type="password" required />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="confirm-password">Confirm Password</Label>
+                <Input
+                  id="confirm-password"
+                  name="confirm-password"
+                  type="password"
+                  required
+                />
+              </div>
+              {errorMessage && (
+                <p className="text-red-500 text-sm">{errorMessage}</p>
               )}
-            </Button>
-            <p className="text-sm text-center text-muted-foreground">
-              Already have an account?{" "}
-              <Link to="/login" className="text-primary hover:underline">
-                Log in
-              </Link>
-            </p>
-          </CardFooter>
-        </form>
+              <Button type="submit" className="w-full" disabled={isLoading}>
+                {isLoading ? (
+                  <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    Creating your account...
+                  </>
+                ) : (
+                  "Create account"
+                )}
+              </Button>
+            </div>
+          </form>
+        </CardContent>
+
+        <CardFooter>
+          <p className="text-sm text-center w-full text-muted-foreground">
+            Already have an account?{" "}
+            <Link to="/login" className="text-primary hover:underline">
+              Sign in
+            </Link>
+          </p>
+        </CardFooter>
       </Card>
     </div>
   );

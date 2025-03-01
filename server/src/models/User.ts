@@ -13,6 +13,9 @@ interface IUser extends Document {
   fcmToken?: string;
   tasks: Types.ObjectId[]; // Array of task references
   taskAnalysisSchedule: TaskAnalysisSchedule; // Task analysis schedule
+  googleId?: string; // Google unique identifier
+  avatar?: string; // Profile image URL
+  authProvider: string; // Auth provider (local, google)
 }
 
 interface TaskAnalysisSchedule {
@@ -35,12 +38,15 @@ const UserSchema: Schema<IUser> = new Schema(
       secondRunTime: { type: String, default: "" },
       enabled: { type: Boolean, default: false },
     },
-    password: { type: String, required: true },
+    password: { type: String, required: false },
     failedLoginAttempts: { type: Number, default: 0 },
     isLocked: { type: Boolean, default: false },
     isLoggedIn: { type: Boolean, default: false },
     fcmToken: { type: String },
     tasks: [{ type: mongoose.Schema.Types.ObjectId, ref: "Task" }], // Reference to Task collection
+    googleId: { type: String },
+    avatar: { type: String },
+    authProvider: { type: String, enum: ["local", "google"], default: "local" },
   },
   { timestamps: true }
 );
@@ -57,10 +63,13 @@ UserSchema.pre("save", async function (next) {
 UserSchema.methods.comparePassword = async function (
   plainPassword: string
 ): Promise<boolean> {
+  // If no password (Google user), return false
+  if (!this.password) return false;
   return await bcrypt.compare(plainPassword, this.password);
 };
 
 // Index email for faster querying
 UserSchema.index({ email: 1 });
+UserSchema.index({ googleId: 1 });
 
 export default mongoose.model<IUser>("User", UserSchema);
