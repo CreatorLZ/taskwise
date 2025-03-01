@@ -33,6 +33,13 @@ app.use(
   })
 );
 
+// Set COOP and CORP headers
+app.use((req, res, next) => {
+  res.setHeader("Cross-Origin-Opener-Policy", "same-origin-allow-popups");
+  res.setHeader("Cross-Origin-Resource-Policy", "same-origin");
+  next();
+});
+
 // Register the routes
 app.use("/api/tasks", taskRoutes);
 app.use("/api/auth", authRoutes);

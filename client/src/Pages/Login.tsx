@@ -58,7 +58,7 @@ export default function LoginPage() {
           userId,
           fcmToken,
         });
-        console.log(fcmToken);
+        // console.log(fcmToken);
       }
 
       const clearTasks = useTaskStore.getState().clearTasks;
