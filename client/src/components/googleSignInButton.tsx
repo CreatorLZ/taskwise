@@ -33,12 +33,28 @@ const GoogleSignInButton = ({
     onSuccess: async (codeResponse) => {
       setIsLoading(true);
       try {
-        // Exchange token with our backend
-        const response = await api.post("/auth/google", {
-          token: codeResponse.access_token,
+        // Get ID token with additional request
+        const response = await fetch(
+          "https://www.googleapis.com/oauth2/v3/userinfo",
+          {
+            headers: {
+              Authorization: `Bearer ${codeResponse.access_token}`,
+            },
+          }
+        );
+
+        if (!response.ok) {
+          throw new Error("Failed to get user info from Google");
+        }
+
+        const userData = await response.json();
+
+        // Exchange token with our backend (sending user info instead)
+        const authResponse = await api.post("/auth/googlelogin", {
+          googleUser: userData,
         });
 
-        const { token, user, userId } = response.data;
+        const { token, user, userId } = authResponse.data;
 
         // Update auth store
         setUser(user);

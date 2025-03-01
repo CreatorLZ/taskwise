@@ -11,20 +11,13 @@ export const googleLogin = async (
   res: Response
 ): Promise<void | any> => {
   try {
-    const { token } = req.body;
+    const { googleUser } = req.body;
 
-    // Verify the Google token
-    const ticket = await client.verifyIdToken({
-      idToken: token,
-      audience: process.env.GOOGLE_CLIENT_ID,
-    });
-
-    const payload = ticket.getPayload();
-    if (!payload) {
-      return res.status(400).json({ message: "Invalid token" });
+    if (!googleUser || !googleUser.sub || !googleUser.email) {
+      return res.status(400).json({ message: "Invalid Google user data" });
     }
 
-    const { email, name, picture, sub } = payload;
+    const { email, name, picture, sub } = googleUser;
 
     // Check if user exists
     let user = await User.findOne({ $or: [{ googleId: sub }, { email }] });
