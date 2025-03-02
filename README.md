@@ -42,7 +42,6 @@ Taskwise is a smart task management application that leverages AI to help users 
    ```bash
    git clone https://github.com/your-username/taskwise.git
    cd taskwise
-## Getting Started 🚧
 
 ### 2. Install dependencies:
 1. install:
