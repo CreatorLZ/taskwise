@@ -7,7 +7,6 @@ import {
   Calendar,
   Clock,
   Home,
-  ListTodo,
   Settings,
   Star,
   Users,
@@ -16,6 +15,7 @@ import {
   AlignRight,
   Loader2,
   ClipboardList,
+  NotebookPen,
 } from "lucide-react";
 
 import {
@@ -107,8 +107,8 @@ export function DashboardSidebar() {
         tooltip: "Dashboard",
       },
       {
-        name: "Tasks",
-        icon: ListTodo,
+        name: "Notes",
+        icon: NotebookPen,
         path: "#",
         disabled: true,
         tooltip: "In the works",

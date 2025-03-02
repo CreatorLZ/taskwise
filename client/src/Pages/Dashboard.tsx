@@ -9,7 +9,7 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { Progress } from "@/components/ui/progress";
+// import { Progress } from "@/components/ui/progress";
 import {
   Select,
   SelectContent,
@@ -550,7 +550,7 @@ export default function TaskDashboard() {
                   <CardDescription>Your productivity metrics</CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-8">
-                  <div className="space-y-2">
+                  {/* <div className="space-y-2">
                     <div className="flex justify-between text-sm">
                       <span className="text-muted-foreground">
                         Weekly Progress
@@ -558,7 +558,7 @@ export default function TaskDashboard() {
                       <span className="font-medium">82%</span>
                     </div>
                     <Progress value={82} />
-                  </div>
+                  </div> */}
                   <div className="space-y-4">
                     <h4 className="text-sm font-medium text-muted-foreground">
                       Quick Stats

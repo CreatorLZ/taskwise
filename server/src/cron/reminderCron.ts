@@ -7,16 +7,14 @@ import { sendPushNotification } from "../utils/notificationUtils";
 
 // Configure Nodemailer transport for sending emails
 const transporter = nodemailer.createTransport({
-  service: "gmail", // For example, using Gmail SMTP
+  service: "gmail", // Use Gmail as email service
   auth: {
-    // user: process.env.EMAIL_USER, //  email address
-    // pass: process.env.EMAIL_PASS, // email password or app-specific password
     user: "anyimworkspace@gmail.com",
     pass: "otia aovt ujqx gins",
   },
 });
 
-// Test the connection when your server starts
+// Test the connection when server starts
 transporter.verify(function (error, success) {
   if (error) {
     console.log("Email server error:", error);

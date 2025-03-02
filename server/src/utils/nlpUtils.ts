@@ -36,13 +36,13 @@ JSON format:
   "description": "detailed description",
   "completed": false,
   "priority": "Medium",
-  "dueDate": "ISO date string",
+  "dueDate": "ISO date string with EXACT time specified in command (not adjusted)",
   "status": "Pending",
   "reminderTime": "ISO date string",
   "userId": "${userId}"
 }
 
-Use ${currentDateISO} as today's date. Set reminderTime 1h before dueDate.`;
+Important: Use ${currentDateISO} as reference for today's date. Set the dueDate to the EXACT time mentioned in the command without any adjustments. If a specific time is mentioned (like 7pm), use that exact time in the dueDate. and make sure to always provide a description in the description field.`;
 
     const response = (await Promise.race([
       client.textGeneration({
