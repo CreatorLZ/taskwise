@@ -36,13 +36,12 @@ Taskwise is a smart task management application that leverages AI to help users 
 - **Firebase Project**: For push notifications.
 - **Postman (Optional)**: For testing API endpoints.
 
-### Installation
+### 1. Installation
 
 1. Clone the repository:
    ```bash
    git clone https://github.com/your-username/taskwise.git
    cd taskwise
-## Getting Started 🚧
 
 ### 2. Install dependencies:
 1. install:
