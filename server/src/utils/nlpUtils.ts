@@ -26,7 +26,6 @@ export const createTaskFromNLP = async (command: string, userId: string) => {
     const currentDate = new Date();
     const currentDateISO = currentDate.toISOString();
 
-    // MODIFIED: Simplified prompt for faster processing
     const prompt = `Convert this command into a JSON task object. Return ONLY valid JSON without any explanation:
 Command: ${command}
 
@@ -36,13 +35,18 @@ JSON format:
   "description": "detailed description",
   "completed": false,
   "priority": "Medium",
-  "dueDate": "ISO date string with EXACT time specified in command (not adjusted)",
+  "dueDate": "ISO date string ",
   "status": "Pending",
   "reminderTime": "ISO date string",
   "userId": "${userId}"
 }
 
-Important: Use ${currentDateISO} as reference for today's date. Set the dueDate to the EXACT time mentioned in the command without any adjustments. If a specific time is mentioned (like 7pm), use that exact time in the dueDate. and make sure to always provide a description in the description field.`;
+Important time handling instructions:
+1. Use ${currentDateISO} as reference for today's date
+2. For time, use the EXACT hour specified in the command (e.g., "7pm" should be 19:00, not 20:00)
+3. Do NOT adjust or convert time zones - use the exact time as specified
+4. If a specific time is mentioned (like "7pm" or "10:30"), use exactly that time
+5. If no time is specified, default to 23:59 (end of day)`;
 
     const response = (await Promise.race([
       client.textGeneration({
@@ -178,18 +182,23 @@ const createTaskFromData = async (
   userId: string,
   currentDate: Date
 ) => {
+  // Parse the due date from the string
+  const parsedDueDate = new Date(structuredTask.dueDate);
+
+  // Subtract one hour to fix the offset issue
+  parsedDueDate.setHours(parsedDueDate.getHours() - 1);
+
   const taskData = {
     title: structuredTask.title || "Untitled Task",
     description: structuredTask.description,
     completed: false,
     priority: structuredTask.priority || "Medium",
-    dueDate: new Date(structuredTask.dueDate),
+    dueDate: parsedDueDate,
     status: structuredTask.status || "Pending",
     reminderTime: structuredTask.reminderTime
       ? new Date(structuredTask.reminderTime)
-      : new Date(
-          new Date(structuredTask.dueDate).getTime() - 24 * 60 * 60 * 1000
-        ),
+      : new Date(parsedDueDate.getTime() - 24 * 60 * 60 * 1000),
+
     userId: userId,
   };
 

@@ -95,7 +95,7 @@ export function NewTaskModal() {
             setDescription("");
             setPriority("");
             setDate(undefined);
-            setTime("23:59");
+            setTime("11:59");
             setOpen(false);
             setErrorMessage(null);
           },

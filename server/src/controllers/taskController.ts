@@ -89,12 +89,12 @@ export const createTask = asyncHandler(async (req: Request, res: Response) => {
 
   res.status(201).json({
     ...task.toObject(),
-    dueDate: task.dueDate.toISOString(),
+    dueDate: task.dueDate,
     dueTime: formatDistanceToNow(new Date(task.dueDate), {
       addSuffix: true,
     }),
-    formattedDueDate: format(new Date(task.dueDate), "MMM d, yyyy h:mm a"),
-    startDate: format(new Date(createdAt), "yyyy-MM-dd"),
+    formattedDueDate: format(task.dueDate, "MMM d, yyyy h:mm a"),
+    startDate: format(createdAt, "yyyy-MM-dd"),
     progress: calculateTimeProgress(
       createdAt.toISOString(),
       task.dueDate.toISOString()
