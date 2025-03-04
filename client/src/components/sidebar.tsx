@@ -313,7 +313,7 @@ export function DashboardSidebar() {
                         <div className="flex w-full items-center gap-2 p-2 cursor-pointer hover:bg-accent">
                           <Avatar className="size-8">
                             <AvatarImage
-                              src={user?.image || "/placeholder.svg"}
+                              src={user?.avatar || "/placeholder.svg"}
                               alt={user?.username || "User"}
                             />
                             <AvatarFallback>
@@ -447,7 +447,7 @@ export function DashboardSidebar() {
                       {/* <div className="flex w-full items-center gap-2 p-2 cursor-pointer hover:bg-accent"> */}
                       <Avatar className="size-4">
                         <AvatarImage
-                          src={user?.image || "/placeholder.svg"}
+                          src={user?.avatar || "/placeholder.svg"}
                           alt={user?.username || "User"}
                         />
                         <AvatarFallback>
