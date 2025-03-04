@@ -269,8 +269,6 @@ Your Task Manager`;
           <span class="priority-badge $<span class="priority-badge ${priorityClass}">${
       task.priority
     }</span>
-
-">${task.priority}</span>
         </p>
         
         ${
