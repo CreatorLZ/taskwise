@@ -27,13 +27,15 @@ transporter.verify(function (error, success) {
 const sendEmailNotification = async (
   email: string,
   subject: string,
-  text: string
+  text: string,
+  html: string
 ): Promise<boolean> => {
   const mailOptions = {
     from: process.env.EMAIL_USER, // Sender's email address
     to: email,
     subject: subject,
-    text: text,
+    text: text, // Plain text fallback
+    html: html, // HTML version
   };
 
   try {
@@ -87,11 +89,222 @@ Please complete this task on time.
 
 Best regards,
 Your Task Manager`;
+    // Prepare HTML email
+    const priorityClass = task.priority.toLowerCase();
+
+    const emailHtml = `<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>TaskWise Reminder</title>
+  <style>
+    /* Base styles */
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
+      line-height: 1.6;
+      color: #1a1a2e;
+      background-color: #f5f7fb;
+      margin: 0;
+      padding: 0;
+    }
+    
+    .email-container {
+      max-width: 600px;
+      margin: 0 auto;
+      background-color: #ffffff;
+      border-radius: 8px;
+      overflow: hidden;
+      box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+    }
+    
+    /* Header styles */
+    .header {
+      background-color: #0f172a;
+      color: white;
+      padding: 20px;
+      text-align: center;
+    }
+    
+    .logo-container {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin-bottom: 5px;
+    }
+    
+    .logo-icon {
+      width: 28px;
+      height: 28px;
+      margin-right: 10px;
+    }
+    
+    .logo-text {
+      font-size: 24px;
+      font-weight: bold;
+      margin: 0;
+    }
+    
+    .subtitle {
+      font-size: 14px;
+      opacity: 0.8;
+      margin: 0;
+    }
+    
+    /* Content styles */
+    .content {
+      padding: 30px 25px;
+    }
+    
+    .greeting {
+      font-size: 18px;
+      margin-bottom: 20px;
+    }
+    
+    .reminder {
+      font-size: 16px;
+      margin-bottom: 25px;
+    }
+    
+    .task-card {
+      background-color: #f8fafc;
+      border: 1px solid #e2e8f0;
+      border-radius: 8px;
+      padding: 20px;
+      margin-bottom: 25px;
+    }
+    
+    .task-title {
+      font-size: 18px;
+      font-weight: bold;
+      margin-top: 0;
+      margin-bottom: 15px;
+    }
+    
+    .task-details {
+      margin-bottom: 5px;
+    }
+    
+    .label {
+      font-weight: 600;
+      color: #64748b;
+    }
+    
+    .priority-badge {
+      display: inline-block;
+      background-color: #fecaca;
+      color: #ef4444;
+      font-size: 12px;
+      font-weight: 600;
+      padding: 4px 10px;
+      border-radius: 12px;
+    }
+    
+    .priority-badge.high {
+      background-color: #fecaca;
+      color: #ef4444;
+    }
+    
+    .priority-badge.medium {
+      background-color: #fed7aa;
+      color: #f97316;
+    }
+    
+    .priority-badge.low {
+      background-color: #bfdbfe;
+      color: #3b82f6;
+    }
+    
+    .cta-button {
+      display: inline-block;
+      background-color: #0f172a;
+      color: white;
+      text-decoration: none;
+      padding: 12px 24px;
+      border-radius: 6px;
+      font-weight: 600;
+      margin-top: 10px;
+    }
+    
+    /* Footer styles */
+    .footer {
+      background-color: #f1f5f9;
+      padding: 20px;
+      text-align: center;
+      font-size: 12px;
+      color: #64748b;
+    }
+  </style>
+</head>
+<body>
+  <div class="email-container">
+    <div class="header">
+      <div class="logo-container">
+        <!-- Brain icon from Lucide React -->
+        <svg class="logo-icon" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M9.5 2A2.5 2.5 0 0 1 12 4.5v15a2.5 2.5 0 0 1-4.96.44 2.5 2.5 0 0 1-2.96-3.08 3 3 0 0 1-.34-5.58 2.5 2.5 0 0 1 1.32-4.24 2.5 2.5 0 0 1 4.44-2.04Z"></path>
+          <path d="M14.5 2A2.5 2.5 0 0 0 12 4.5v15a2.5 2.5 0 0 0 4.96.44 2.5 2.5 0 0 0 2.96-3.08 3 3 0 0 0 .34-5.58 2.5 2.5 0 0 0-1.32-4.24 2.5 2.5 0 0 0-4.44-2.04Z"></path>
+        </svg>
+        <h1 class="logo-text">TaskWise</h1>
+      </div>
+      <p class="subtitle">AI-Powered Tasks</p>
+    </div>
+    
+    <div class="content">
+      <p class="greeting">Hello ${user.username},</p>
+      
+      <p class="reminder">Your task "${task.title}" is due soon!</p>
+      
+      <div class="task-card">
+        <h2 class="task-title">${task.title}</h2>
+        
+        <p class="task-details">
+          <span class="label">Due:</span> ${new Date(
+            task.dueDate
+          ).toLocaleString()}
+        </p>
+        
+        <p class="task-details">
+          <span class="label">Priority:</span> 
+          <span class="priority-badge $<span class="priority-badge ${priorityClass}">${
+      task.priority
+    }</span>
+
+">${task.priority}</span>
+        </p>
+        
+        ${
+          task.description
+            ? `
+        <p class="task-details">
+          <span class="label">Description:</span><br>
+          ${task.description}
+        </p>
+        `
+            : ""
+        }
+      </div>
+      
+      <p>Please complete this task on time to maintain your productivity.</p>
+      
+      <p>Our AI analysis shows you're most productive between 9 AM and 11 AM. Consider scheduling important tasks during this time.</p>
+      
+      <a href="${`https://taskwise-three.vercel.app/dashboard`}" class="cta-button">View Task</a>
+    </div>
+    
+    <div class="footer">
+      <p>© ${new Date().getFullYear()} TaskWise. All rights reserved.</p>
+      <p>This is an automated reminder from your TaskWise application.</p>
+    </div>
+  </div>
+</body>
+</html>`;
 
     const emailSent = await sendEmailNotification(
       user.email,
       emailSubject,
-      emailText
+      emailText,
+      emailHtml
     );
 
     return notificationSent || emailSent;
