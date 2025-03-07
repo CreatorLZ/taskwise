@@ -206,7 +206,7 @@ export default function TodoList() {
     <div className={`min-h-screen ${theme} transition-colors duration-300`}>
       <div className="w-full p-4 md:p-6 pb-24">
         {/* Header with Settings */}
-        <div className="flex justify-between items-center mb-6">
+        <div className="flex justify-between items-center mb-6 mt-6">
           <h1 className="text-2xl font-semibold">Todo List</h1>
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
@@ -266,7 +266,6 @@ export default function TodoList() {
           </DropdownMenu>
         </div>
 
-        {/* Rest of your existing UI components */}
         {/* Search and Filter */}
         <div className="mb-6 flex flex-col md:flex-row gap-3">
           <div className="relative flex-1">
@@ -327,27 +326,27 @@ export default function TodoList() {
         </div>
 
         {/* Tabs */}
-        <Tabs defaultValue="all" className="mb-6">
-          <TabsList className="grid grid-cols-4 mb-4">
-            <TabsTrigger value="pinned">
+        <Tabs defaultValue="all" className="mb-6 flex-wrap">
+          <TabsList className="flex flex-wrap gap-2 mb-10 w-full">
+            <TabsTrigger className="flex-1 min-w-[80px]" value="pinned">
               Pinned
               <Badge variant="outline" className="ml-2">
                 {stats.pinned}
               </Badge>
             </TabsTrigger>
-            <TabsTrigger value="all">
+            <TabsTrigger className="flex-1 min-w-[80px]" value="all">
               All
               <Badge variant="outline" className="ml-2">
                 {stats.all}
               </Badge>
             </TabsTrigger>
-            <TabsTrigger value="active">
+            <TabsTrigger className="flex-1 min-w-[80px]" value="active">
               In Progress
               <Badge variant="outline" className="ml-2">
                 {stats.active}
               </Badge>
             </TabsTrigger>
-            <TabsTrigger value="completed">
+            <TabsTrigger className="flex-1 min-w-[80px]" value="completed">
               Completed
               <Badge variant="outline" className="ml-2">
                 {stats.completed}
@@ -428,7 +427,7 @@ export default function TodoList() {
           </TabsContent>
         </Tabs>
 
-        {/* Fixed Add Task Input at the bottom */}
+        {/*  Task Input */}
         <div className="fixed bottom-0 left-0 right-0 p-4 bg-white/80 backdrop-blur-sm border-t border-gray-200 shadow-lg z-10">
           <div className="flex gap-2 max-w-4xl mx-auto">
             <Input
