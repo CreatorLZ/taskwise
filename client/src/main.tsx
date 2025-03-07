@@ -18,6 +18,7 @@ import { HelmetProvider } from "react-helmet-async";
 import { Analytics } from "@vercel/analytics/react";
 import { GoogleOAuthProvider } from "@react-oauth/google";
 import TodoList from "./Pages/todoList.tsx";
+
 // Firebase Cloud Messaging foreground message handler
 
 onMessageListener((payload) => {

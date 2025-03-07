@@ -165,7 +165,7 @@ export default function TodoList() {
     });
   };
 
-  // Modify the togglePinTask function to reorder tasks
+  //  the togglePinTask function to reorders tasks
   const togglePinTask = (id: string) => {
     setTasks((prevTasks) => {
       const updatedTasks = prevTasks.map((task) =>
@@ -175,7 +175,7 @@ export default function TodoList() {
     });
   };
 
-  // Update the filterTasks function to use the sorted tasks
+  //  filterTasks function to use the sorted tasks
   const filterTasks = (tasksToFilter: Task[], tab: string) => {
     const filteredBySearch = tasksToFilter.filter(
       (task) =>
