@@ -17,6 +17,7 @@ import { Bell } from "lucide-react";
 import { HelmetProvider } from "react-helmet-async";
 import { Analytics } from "@vercel/analytics/react";
 import { GoogleOAuthProvider } from "@react-oauth/google";
+import TodoList from "./Pages/todoList.tsx";
 // Firebase Cloud Messaging foreground message handler
 
 onMessageListener((payload) => {
@@ -55,6 +56,16 @@ const router = createBrowserRouter([
       <ProtectedRoute>
         <DashboardLayout>
           <TaskDashboard />
+        </DashboardLayout>
+      </ProtectedRoute>
+    ),
+  },
+  {
+    path: "/todo",
+    element: (
+      <ProtectedRoute>
+        <DashboardLayout>
+          <TodoList />
         </DashboardLayout>
       </ProtectedRoute>
     ),

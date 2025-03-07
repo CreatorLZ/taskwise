@@ -1,5 +1,4 @@
 import type React from "react";
-// import { toast } from "sonner";
 import { useCallback, useMemo, useState } from "react";
 import { Button } from "@/components/ui/button";
 import {
@@ -41,7 +40,6 @@ import { Input } from "@/components/ui/input";
 
 import useAuthStore from "@/store/authstore";
 import useTaskStore, {
-  // useAIPrioritizeTasksMutation,
   useFetchTasks,
   useTaskAnalysisSchedulingMutation,
 } from "@/store/taskStore";
@@ -174,7 +172,7 @@ export default function TaskDashboard() {
       searchQuery,
       sortBy,
     ]
-  ); // Only recreate when taskFilter changes
+  );
 
   // Get the total number of tasks for each category
   const totalInProgressTasks = useMemo(
@@ -280,11 +278,6 @@ export default function TaskDashboard() {
                           >
                             AI Prioritization
                           </label>
-                          {/* {schedulingMutation.isPending && (
-                            <span className="text-sm text-muted-foreground ml-2">
-                              Setting up scheduling...
-                            </span>
-                          )} */}
                           {schedulingMutation.isPending && (
                             <LoadingIndicator className="ml-2" />
                           )}

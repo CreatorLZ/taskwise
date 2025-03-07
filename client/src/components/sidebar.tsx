@@ -116,9 +116,9 @@ export function DashboardSidebar() {
       {
         name: "Todo",
         icon: ClipboardList,
-        path: "#",
-        disabled: true,
-        tooltip: "In the works",
+        path: "/todo",
+        disabled: false,
+        tooltip: "Todo List",
       },
       {
         name: "Calendar",
@@ -348,7 +348,7 @@ export function DashboardSidebar() {
       </Sheet>
 
       {/* Desktop Sidebar */}
-      <div className="hidden md:block">
+      <div className="hidden md:block z-50">
         <Sidebar collapsible="icon">
           <SidebarHeader>
             <SidebarMenu>
