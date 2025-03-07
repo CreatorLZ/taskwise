@@ -17,7 +17,7 @@ import { Bell } from "lucide-react";
 import { HelmetProvider } from "react-helmet-async";
 import { Analytics } from "@vercel/analytics/react";
 import { GoogleOAuthProvider } from "@react-oauth/google";
-import TodoList from "./Pages/todoList.tsx";
+import TodoList from "./Pages/TodoList.tsx";
 
 // Firebase Cloud Messaging foreground message handler
 
