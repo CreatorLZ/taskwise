@@ -4,12 +4,12 @@ import { useCallback, useEffect, useState } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import {
   Brain,
-  Calendar,
-  Clock,
+  // Calendar,
+  // Clock,
   Home,
   Settings,
-  Star,
-  Users,
+  // Star,
+  // Users,
   X,
   LogOut,
   AlignRight,
