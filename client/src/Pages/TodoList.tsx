@@ -96,12 +96,36 @@ export default function TodoList() {
   const [priorityFilter, setPriorityFilter] = useState<string | null>(null);
 
   // State for theme
-  const [theme, setTheme] = useState<string>("bg-white");
+  const [theme, setTheme] = useState<string>(() => {
+    if (typeof window !== "undefined") {
+      const savedTheme = localStorage.getItem("theme");
+      return savedTheme || "bg-white";
+    }
+    return "bg-white";
+  });
+
+  const [activeTab, setActiveTab] = useState<string>(() => {
+    if (typeof window !== "undefined") {
+      const savedTab = localStorage.getItem("activeTab");
+      return savedTab || "all";
+    }
+    return "all";
+  });
 
   // Save tasks to localStorage whenever they change
   useEffect(() => {
     localStorage.setItem("tasks", JSON.stringify(tasks));
   }, [tasks]);
+
+  //  save the theme to localStorage
+  useEffect(() => {
+    localStorage.setItem("theme", theme);
+  }, [theme]);
+
+  //  save the active tab to localStorage
+  useEffect(() => {
+    localStorage.setItem("activeTab", activeTab);
+  }, [activeTab]);
 
   // Add a new task
   const addTask = () => {
@@ -153,7 +177,7 @@ export default function TodoList() {
     );
   };
 
-  // Add a function to sort tasks with pinned items at the top
+  //  sort tasks with pinned items at the top
   const sortTasks = (tasksToSort: Task[]): Task[] => {
     return [...tasksToSort].sort((a, b) => {
       // Sort by pinned status first (pinned tasks come first)
@@ -277,7 +301,7 @@ export default function TodoList() {
               onChange={(e) => setSearchQuery(e.target.value)}
             />
           </div>
-          <div className="flex gap-2">
+          <div className="flex flex-wrap gap-2">
             <Button
               variant={priorityFilter === null ? "default" : "outline"}
               size="sm"
@@ -326,27 +350,27 @@ export default function TodoList() {
         </div>
 
         {/* Tabs */}
-        <Tabs defaultValue="all" className="mb-6 flex-wrap">
-          <TabsList className="flex flex-wrap gap-2 mb-10 w-full">
-            <TabsTrigger className="flex-1 min-w-[80px]" value="pinned">
+        <Tabs value={activeTab} onValueChange={setActiveTab} className="mb-6">
+          <TabsList className="grid grid-cols-2 md:flex md:flex-wrap gap-1 mb-12 md:mb-10 w-full">
+            <TabsTrigger className="md:flex-1 min-w-[80px]" value="pinned">
               Pinned
               <Badge variant="outline" className="ml-2">
                 {stats.pinned}
               </Badge>
             </TabsTrigger>
-            <TabsTrigger className="flex-1 min-w-[80px]" value="all">
+            <TabsTrigger className="md:flex-1 min-w-[80px]" value="all">
               All
               <Badge variant="outline" className="ml-2">
                 {stats.all}
               </Badge>
             </TabsTrigger>
-            <TabsTrigger className="flex-1 min-w-[80px]" value="active">
+            <TabsTrigger className="md:flex-1 min-w-[80px]" value="active">
               In Progress
               <Badge variant="outline" className="ml-2">
                 {stats.active}
               </Badge>
             </TabsTrigger>
-            <TabsTrigger className="flex-1 min-w-[80px]" value="completed">
+            <TabsTrigger className="md:flex-1 min-w-[80px]" value="completed">
               Completed
               <Badge variant="outline" className="ml-2">
                 {stats.completed}
@@ -469,7 +493,7 @@ function TaskItem({
   return (
     <div
       className={cn(
-        "flex items-center justify-between p-3 rounded-lg border transition-all",
+        "flex items-start md:items-center justify-between p-3 rounded-lg border transition-all",
         task.pinned && "border-amber-300 bg-amber-50",
         task.completed && !task.pinned
           ? "bg-gray-50 border-gray-100"
@@ -477,13 +501,13 @@ function TaskItem({
       )}
     >
       <div
-        className="flex items-center gap-3 flex-1"
+        className="flex items-start md:items-center gap-3 flex-1"
         onClick={() => onToggle(task.id)}
       >
         <Checkbox
           checked={task.completed}
           onCheckedChange={() => onToggle(task.id)}
-          className={task.completed ? "opacity-50" : ""}
+          className={cn("mt-1 md:mt-0", task.completed ? "opacity-50" : "")}
         />
         <div className="flex-1 cursor-pointer">
           <p
@@ -494,7 +518,7 @@ function TaskItem({
           >
             {task.title}
           </p>
-          <div className="flex items-center gap-2 mt-1">
+          <div className="flex flex-wrap items-center gap-2 mt-1">
             <span
               className={cn(
                 "text-xs px-2 py-0.5 rounded-full cursor-pointer",
@@ -513,7 +537,7 @@ function TaskItem({
           </div>
         </div>
       </div>
-      <div className="flex items-center gap-2">
+      <div className="flex items-center gap-1">
         <Button
           variant="ghost"
           size="icon"
