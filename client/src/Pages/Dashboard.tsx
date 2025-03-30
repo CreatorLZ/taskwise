@@ -64,7 +64,7 @@ export default function TaskDashboard() {
     "dueDate"
   );
 
-  const user = useAuthStore((state) => state.user);
+  // const user = useAuthStore((state) => state.user);
   const userId = useAuthStore((state) => state.userId);
   const isAIEnabled = useTaskStore((state) => state.isAIEnabled);
   const setAIEnabled = useTaskStore((state) => state.setAIEnabled);
