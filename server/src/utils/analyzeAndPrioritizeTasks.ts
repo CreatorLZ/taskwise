@@ -1,9 +1,42 @@
-import { HfInference } from "@huggingface/inference";
+import { GoogleGenerativeAI } from "@google/generative-ai";
+import { Types } from "mongoose";
 import Task from "../models/Task";
 
-const client = new HfInference(process.env.HUGGINGFACE_API_KEY);
+// Initialize Gemini client with API key
+const genai = new GoogleGenerativeAI(process.env.GEMINI_API_KEY as string);
+const model = genai.getGenerativeModel({ model: "gemini-1.5-flash" });
 
-export const analyzeAndPrioritizeTasks = async (userId: string) => {
+interface IPriorityLog {
+  oldPriority: string;
+  newPriority: string;
+  reason: string;
+  timestamp: Date;
+}
+
+interface TaskDocument {
+  _id: string;
+  title: string;
+  description?: string;
+  completed: boolean;
+  priority: string; // "low", "medium", "high", "completed"
+  previousPriority?: string;
+  dueDate: Date;
+  dueTime: Date;
+  status: string; // "pending", "in-progress", "completed"
+  reminderTime?: Date;
+  userId: Types.ObjectId;
+  retouchedByAI: boolean; // Tracks if AI has analyzed the task
+  priorityLogs: IPriorityLog[]; // Logs priority changes
+  createdAt: Date;
+  updatedAt: Date;
+  progress: Number;
+  notificationSent: boolean;
+  save: () => Promise<TaskDocument>;
+}
+
+export const analyzeAndPrioritizeTasks = async (
+  userId: string
+): Promise<void> => {
   try {
     if (!userId) {
       throw new Error("userId is required but was not provided.");
@@ -11,10 +44,10 @@ export const analyzeAndPrioritizeTasks = async (userId: string) => {
 
     const currentDate = new Date();
 
-    const tasks = await Task.find({
+    const tasks = (await Task.find({
       userId,
       completed: false,
-    });
+    })) as TaskDocument[];
 
     if (tasks.length === 0) {
       console.log(`No eligible tasks to analyze for user ${userId}.`);
@@ -46,18 +79,17 @@ Rules:
 - Explain any changes in the reason field
 - Return only the JSON object, no other text`;
 
-      // Use direct completion instead of streaming
-      const response = await client.textGeneration({
-        model: "deepseek-ai/DeepSeek-R1-Distill-Qwen-32B",
-        inputs: analysisInput,
-        parameters: {
-          max_new_tokens: 500,
+      // Gemini API call
+      const response = await model.generateContent({
+        contents: [{ role: "user", parts: [{ text: analysisInput }] }],
+        generationConfig: {
+          maxOutputTokens: 500,
           temperature: 0.6,
-          return_full_text: false,
+          topP: 0.95,
         },
       });
 
-      let output = response.generated_text;
+      let output: string = response.response.text();
       console.log("Model response:", output);
 
       // Extract JSON using regex
@@ -72,7 +104,11 @@ Rules:
       // Take the longest match as it's likely the complete JSON
       const jsonStr = matches.reduce((a, b) => (a.length > b.length ? a : b));
 
-      let aiResponse;
+      let aiResponse: {
+        newPriority: string;
+        newStatus: string;
+        reason: string;
+      };
       try {
         aiResponse = JSON.parse(jsonStr);
       } catch (parseError) {
@@ -128,7 +164,7 @@ Rules:
     }
 
     console.log(`Task analysis complete for user ${userId}`);
-  } catch (error) {
+  } catch (error: any) {
     console.error("Error during task analysis:", error);
     throw new Error("Failed to analyze and prioritize tasks");
   }
