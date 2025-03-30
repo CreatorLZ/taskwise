@@ -51,7 +51,9 @@ Important time handling instructions:
     const response = (await Promise.race([
       client.textGeneration({
         // Changed to smaller, faster model
-        model: "mistralai/Mistral-7B-Instruct-v0.2", // Changed from deepseek-ai/DeepSeek-R1-Distill-Qwen-32B
+        // model: "mistralai/Mistral-7B-Instruct-v0.2", // Changed from deepseek-ai/DeepSeek-R1-Distill-Qwen-32B
+        model: "deepseek-ai/DeepSeek-R1-Distill-Qwen-32B", // Changed from deepseek-ai/DeepSeek-R1-Distill-Qwen-32B
+
         inputs: prompt,
         parameters: {
           // Optimized generation parameters
