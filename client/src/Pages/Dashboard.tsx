@@ -75,7 +75,7 @@ export default function TaskDashboard() {
 
   const tasks = useTaskStore((state) => state.tasks) ?? [];
 
-  console.log(user);
+  // console.log(user);
   // console.log(tasks);
   interface Task {
     _id: string;
