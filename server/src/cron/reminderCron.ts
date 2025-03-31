@@ -5,12 +5,12 @@ import nodemailer from "nodemailer";
 import { addMinutes } from "date-fns";
 import { sendPushNotification } from "../utils/notificationUtils";
 
-// Configure Nodemailer transport for sending emails
+//  Nodemailer transport for sending emails
 const transporter = nodemailer.createTransport({
   service: "gmail", // Use Gmail as email service
   auth: {
-    user: "anyimworkspace@gmail.com",
-    pass: "otia aovt ujqx gins",
+    user: process.env.EMAIL_USER,
+    pass: process.env.EMAIL_PASS,
   },
 });
 

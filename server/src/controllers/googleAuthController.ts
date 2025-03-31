@@ -71,7 +71,7 @@ export const googleLogin = async (
   }
 };
 
-// Handle Google callback (for server-side flow if needed)
+// Handle Google callback (for server-side)
 export const googleCallback = async (
   req: Request,
   res: Response
