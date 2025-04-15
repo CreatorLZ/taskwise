@@ -1,7 +1,7 @@
 {
   "name": "TaskWise",
   "short_name": "TaskWise",
-  "description": "Collaborative Task Management with AI",
+  "description": "Task Management Made Easy",
   "start_url": "/",
   "display": "standalone",
   "background_color": "#ffffff",
