@@ -1,6 +1,5 @@
 {
   "name": "TaskWise",
-  "short_name": "TaskWise",
   "description": "Task Management Made Easy",
   "start_url": "/",
   "display": "standalone",
