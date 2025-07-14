@@ -42,6 +42,7 @@ import useAuthStore from "@/store/authstore";
 import useTaskStore, {
   useFetchTasks,
   useTaskAnalysisSchedulingMutation,
+  useProductivityInsights, // <-- add this import
 } from "@/store/taskStore";
 import TaskSkeletonLoader from "@/components/taskSkeletonLoader";
 import EmptyTaskState from "@/components/emptyTasksState";
@@ -72,6 +73,8 @@ export default function TaskDashboard() {
 
   // Fetch tasks using React Query
   const { isLoading, error } = useFetchTasks(userId!);
+  const { data: insights, isLoading: insightsLoading } =
+    useProductivityInsights();
 
   const tasks = useTaskStore((state) => state.tasks) ?? [];
 
@@ -307,8 +310,10 @@ export default function TaskDashboard() {
                   <div>
                     <p className="font-medium">Productivity Insight</p>
                     <p className="text-sm text-muted-foreground">
-                      You're most productive between 9 AM and 11 AM. Consider
-                      scheduling important tasks during this time.
+                      {insightsLoading
+                        ? "Loading..."
+                        : insights?.productivityInsight ||
+                          "No insight available."}
                     </p>
                   </div>
                 </div>
@@ -319,8 +324,10 @@ export default function TaskDashboard() {
                   <div>
                     <p className="font-medium">Task Optimization</p>
                     <p className="text-sm text-muted-foreground">
-                      Breaking down "Project Review" into smaller tasks could
-                      improve completion rate by 35%.
+                      {insightsLoading
+                        ? "Loading..."
+                        : insights?.taskOptimization ||
+                          "No optimization suggestion available."}
                     </p>
                   </div>
                 </div>

@@ -230,3 +230,14 @@ export function useTaskAnalysisSchedulingMutation() {
     },
   });
 }
+
+export function useProductivityInsights() {
+  return useQuery({
+    queryKey: ["insights"],
+    queryFn: async () => {
+      const response = await api.get("/insights");
+      return response.data;
+    },
+    staleTime: 5 * 60 * 1000,
+  });
+}
