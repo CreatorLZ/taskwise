@@ -1,5 +1,5 @@
 import express, { Application, Request, Response } from "express";
-import cors from "cors"; // Import CORS middleware
+import cors from "cors";
 import { config } from "dotenv";
 import taskRoutes from "./routes/taskRoutes";
 import authRoutes from "./routes/authRoutes";
@@ -7,6 +7,7 @@ import googleAuthRoutes from "./routes/googleAuthRoutes";
 import nlpRoutes from "./routes/nlp";
 import prioritizeTasks from "./routes/prioritizeTasks";
 import taskAnalysis from "./routes/taskAnalysis";
+import insights from "./routes/insights";
 import connectDB from "./config/db";
 import userRoutes from "./routes/userRoutes";
 import "./cron/reminderCron";
@@ -47,6 +48,7 @@ app.use("/api/auth", googleAuthRoutes);
 app.use("/api", nlpRoutes);
 app.use("/api", prioritizeTasks);
 app.use("/api", taskAnalysis);
+app.use("/api", insights);
 app.use("/api/users", userRoutes);
 
 // Root route
@@ -63,10 +65,10 @@ app.listen(port, () => {
   console.log(`Server is running on port ${port}`);
 });
 
-// const startServer = async () => {
-//   await taskAnalysisScheduler.restoreSchedules();
-// };
+const startServer = async () => {
+  await taskAnalysisScheduler.restoreSchedules();
+};
 
-// startServer();
+startServer();
 
 export default app;

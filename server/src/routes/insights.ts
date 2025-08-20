@@ -1,13 +1,13 @@
 import express from "express";
 import { authenticateUser } from "../middleware/authMiddleware";
-import { generateProductivityInsights } from "../utils/insightUtils";
+import { generateAIPoweredUserInsights } from "../utils/aiUserInsights";
 
 const router = express.Router();
 
 router.get("/insights", authenticateUser, async (req, res) => {
   try {
     const userId = (req as any).user.id;
-    const insights = await generateProductivityInsights(userId);
+    const insights = await generateAIPoweredUserInsights(userId);
     res.json(insights);
   } catch (error: any) {
     res

@@ -36,6 +36,60 @@ import {
   TooltipTrigger,
   TooltipProvider,
 } from "@/components/ui/tooltip";
+
+// Collapsible reveal component for AI insights
+import { ChevronUp } from "lucide-react";
+
+interface RevealInsightProps {
+  icon: React.ReactNode;
+  label: string;
+  value?: string;
+  loading: boolean;
+  defaultText: string;
+}
+
+function RevealInsight({
+  icon,
+  label,
+  value,
+  loading,
+  defaultText,
+}: RevealInsightProps) {
+  const [revealed, setRevealed] = useState(false);
+  return (
+    <div className="flex items-start gap-4">
+      <div className="bg-primary/10 p-2 rounded-lg">{icon}</div>
+      <div className="flex-1">
+        <div
+          className="flex items-center gap-2 cursor-pointer select-none"
+          onClick={() => setRevealed((r) => !r)}
+          tabIndex={0}
+          role="button"
+          aria-expanded={revealed}
+        >
+          <span className="font-medium flex items-center gap-2 mb-0">
+            {label}
+            <ChevronUp
+              className={`transition-transform duration-200 w-4 h-4 ${
+                revealed ? "rotate-180" : "rotate-0"
+              }`}
+            />
+          </span>
+        </div>
+        {!revealed && (
+          <p className="text-xs text-muted-foreground mt-1 mb-0">
+            Click to reveal
+          </p>
+        )}
+        {revealed && (
+          <p className="text-sm text-muted-foreground mt-2">
+            {loading ? "Loading..." : value || defaultText}
+          </p>
+        )}
+      </div>
+    </div>
+  );
+}
 import { Input } from "@/components/ui/input";
 
 import useAuthStore from "@/store/authstore";
@@ -303,34 +357,27 @@ export default function TaskDashboard() {
                 </CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
-                <div className="flex items-start gap-4">
-                  <div className="bg-primary/10 p-2 rounded-lg">
-                    <TrendingUp className="w-4 h-4 text-primary" />
-                  </div>
-                  <div>
-                    <p className="font-medium">Productivity Insight</p>
-                    <p className="text-sm text-muted-foreground">
-                      {insightsLoading
-                        ? "Loading..."
-                        : insights?.productivityInsight ||
-                          "No insight available."}
-                    </p>
-                  </div>
-                </div>
-                <div className="flex items-start gap-4">
-                  <div className="bg-primary/10 p-2 rounded-lg">
-                    <Star className="w-4 h-4 text-primary" />
-                  </div>
-                  <div>
-                    <p className="font-medium">Task Optimization</p>
-                    <p className="text-sm text-muted-foreground">
-                      {insightsLoading
-                        ? "Loading..."
-                        : insights?.taskOptimization ||
-                          "No optimization suggestion available."}
-                    </p>
-                  </div>
-                </div>
+                <RevealInsight
+                  icon={<TrendingUp className="w-4 h-4 text-primary" />}
+                  label="Productivity Insight"
+                  loading={insightsLoading}
+                  value={insights?.productivityInsight}
+                  defaultText="No insight available."
+                />
+                <RevealInsight
+                  icon={<Star className="w-4 h-4 text-primary" />}
+                  label="Task Optimization"
+                  loading={insightsLoading}
+                  value={insights?.taskOptimization}
+                  defaultText="No optimization suggestion available."
+                />
+                <RevealInsight
+                  icon={<Sparkles className="w-4 h-4 text-primary" />}
+                  label="Habit Suggestion"
+                  loading={insightsLoading}
+                  value={insights?.habitSuggestion}
+                  defaultText="No habit suggestion available."
+                />
               </CardContent>
             </Card>
 

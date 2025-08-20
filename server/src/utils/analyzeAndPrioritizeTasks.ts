@@ -4,7 +4,7 @@ import Task from "../models/Task";
 
 // Initialize Gemini client with API key
 const genai = new GoogleGenerativeAI(process.env.GEMINI_API_KEY as string);
-const model = genai.getGenerativeModel({ model: "gemini-1.5-flash" });
+const model = genai.getGenerativeModel({ model: "gemini-2.0-flash" });
 
 interface IPriorityLog {
   oldPriority: string;
