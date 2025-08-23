@@ -69,11 +69,13 @@ function RevealInsight({
         >
           <span className="font-medium flex items-center gap-2 mb-0">
             {label}
-            <ChevronUp
-              className={`transition-transform duration-200 w-4 h-4 ${
-                revealed ? "rotate-180" : "rotate-0"
-              }`}
-            />
+            <div className="flex items-center  mt-1 bg-primary/10 rounded-full p-1">
+              <ChevronUp
+                className={`transition-transform duration-200 h-3 w-3  ${
+                  revealed ? "rotate-180" : "rotate-0"
+                }`}
+              />
+            </div>
           </span>
         </div>
         {!revealed && (
