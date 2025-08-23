@@ -42,12 +42,12 @@ function Landing() {
           >
             Features
           </Link>
-          <Link
+          {/* <Link
             to="#"
             className="text-sm font-medium hover:text-primary transition-colors"
           >
             Pricing
-          </Link>
+          </Link> */}
           <Link
             to="#"
             className="text-sm font-medium hover:text-primary transition-colors"
@@ -55,7 +55,9 @@ function Landing() {
             About
           </Link>
           <Link
-            to="#"
+            to="https://isaacanyim-iota.vercel.app/ "
+            target="_blank"
+            rel="noopener noreferrer"
             className="text-sm font-medium hover:text-primary transition-colors"
           >
             Contact
@@ -99,25 +101,28 @@ function Landing() {
                     your work while you focus on what matters most.
                   </p>
                 </div>
-                <div className="flex flex-row gap-2 min-[400px]:flex-row ">
-                  <Link to="/login">
-                    <Button size="lg" className="relative group w-36 ">
+                <div className="flex flex-row gap-2 min-[400px]:flex-row py-6 justify-center items-center w-full">
+                  <Link to="/login" className="flex-1 flex justify-center">
+                    <Button
+                      size="lg"
+                      className="relative group w-full py-7 max-w-xs"
+                    >
                       <div className="absolute -inset-0.5 bg-gradient-to-r from-purple-600 to-pink-600 rounded-lg blur opacity-30 group-hover:opacity-100 transition duration-1000 group-hover:duration-200" />
-                      <div className="relative bg-white dark:bg-gray-950 rounded-lg flex items-center justify-center px-8 text-black w-32">
-                        Get Started
+                      <div className="relative bg-white dark:bg-gray-950 rounded-lg flex items-center justify-center px-8 py-2 text-black min-w-full">
+                        Get Started For Free
                         <ArrowRight className="ml-2 h-4 w-4" />
                       </div>
                     </Button>
                   </Link>
-                  <Link to="#">
-                    <Button
+                  <Link to="#" className="flex-1 flex justify-center">
+                    {/* <Button
                       size="lg"
                       variant="outline"
                       className="relative overflow-hidden group"
                     >
                       <div className="absolute inset-0 bg-gradient-to-r from-purple-500/20 to-pink-500/20 translate-y-full group-hover:translate-y-0 transition-transform" />
                       <span className="relative">Watch Demo</span>
-                    </Button>
+                    </Button> */}
                   </Link>
                 </div>
               </motion.div>
@@ -281,26 +286,30 @@ function Landing() {
                   future of task management.
                 </p>
               </div>
-              <div className="flex flex-col gap-2 min-[400px]:flex-row">
+              <div className="flex flex-col gap-2 min-[400px]:flex-row ">
                 <Link to="/login">
-                  <Button size="lg" className="relative group">
+                  <Button size="lg" className="relative group py-8">
                     <div className="absolute -inset-0.5 bg-gradient-to-r from-purple-600 to-pink-600 rounded-lg blur opacity-30 group-hover:opacity-100 transition duration-1000 group-hover:duration-200" />
-                    <div className="relative bg-white dark:bg-gray-950 rounded-lg flex items-center px-8 text-black">
+                    <div className="relative bg-white dark:bg-gray-950 rounded-lg flex items-center px-8 py-2 text-black">
                       Start Free Trial
                       <ArrowRight className="ml-2 h-4 w-4" />
                     </div>
                   </Button>
                 </Link>
-                <Link to="#">
+                {/* <Link
+                  to="https://isaacanyim-iota.vercel.app/ "
+                  target="_blank"
+                  rel="noopener noreferrer"
+                >
                   <Button
                     size="lg"
                     variant="outline"
                     className="relative overflow-hidden group"
                   >
                     <div className="absolute inset-0 bg-gradient-to-r from-purple-500/20 to-pink-500/20 translate-y-full group-hover:translate-y-0 transition-transform" />
-                    <span className="relative">Contact Sales</span>
+                    <span className="relative">Contact</span>
                   </Button>
-                </Link>
+                </Link> */}
               </div>
             </motion.div>
           </div>
