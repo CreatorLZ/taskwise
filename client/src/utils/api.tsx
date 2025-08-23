@@ -28,7 +28,7 @@ api.interceptors.response.use(
       logout();
       // Show notification (using alert for simplicity, replace with your UI notification system if available)
       if (typeof window !== "undefined") {
-        alert("Session expired. Please log in again.");
+        alert("Login Session expired. Please log in again.");
         window.location.href = "/login";
       }
     }
