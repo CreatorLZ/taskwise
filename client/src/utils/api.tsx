@@ -14,4 +14,26 @@ api.interceptors.request.use((config) => {
   return config;
 });
 
+// Add a response interceptor to handle token expiration
+api.interceptors.response.use(
+  (response) => response,
+  (error) => {
+    if (
+      error.response &&
+      (error.response.status === 401 ||
+        error.response.data?.message?.toLowerCase().includes("token"))
+    ) {
+      // Clear auth state and redirect to login
+      const logout = useAuthStore.getState().logout;
+      logout();
+      // Show notification (using alert for simplicity, replace with your UI notification system if available)
+      if (typeof window !== "undefined") {
+        alert("Session expired. Please log in again.");
+        window.location.href = "/login";
+      }
+    }
+    return Promise.reject(error);
+  }
+);
+
 export default api;
