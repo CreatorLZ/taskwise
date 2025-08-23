@@ -13,9 +13,14 @@ export class TaskAnalysisScheduler {
   private schedules: Map<string, cron.ScheduledTask[]> = new Map();
 
   async enableSchedulingForUser(userId: string): Promise<any> {
-    // Validate if scheduling already exists for this user
-    if (this.schedules.has(userId)) {
-      throw new Error("Scheduling already enabled for this user");
+    // Check if scheduling is already enabled in the database
+    const user = await User.findById(userId);
+    if (user?.taskAnalysisSchedule?.enabled) {
+      // Scheduling already enabled, do not re-enable or re-run analysis
+      return {
+        firstRunTime: user.taskAnalysisSchedule.firstRunTime,
+        secondRunTime: user.taskAnalysisSchedule.secondRunTime,
+      };
     }
 
     // Get current time and format it as HH:mm
@@ -81,16 +86,10 @@ export class TaskAnalysisScheduler {
 
   async restoreSchedules(): Promise<void> {
     // Restore schedules from database on server restart
-    const users = await User.find({
-      "taskAnalysisSchedule.enabled": true,
-    });
-
-    for (const user of users) {
-      const schedule = user.taskAnalysisSchedule;
-      if (schedule && schedule.enabled) {
-        await this.enableSchedulingForUser(user.id);
-      }
-    }
+    // Only schedule for users who have never enabled scheduling before (should be none on restart)
+    // Do not re-run analysis for already enabled users
+    // This function is now a no-op to prevent unnecessary Gemini requests
+    return;
   }
 }
 
