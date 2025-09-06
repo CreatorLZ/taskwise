@@ -15,7 +15,7 @@ const PublicRoute = ({ children }: PublicRouteProps) => {
     return <Navigate to={from} replace />;
   }
 
-  return <>{children}</>;
+  return <div className="font-space-grotesk">{children}</div>;
 };
 
 export default PublicRoute;
