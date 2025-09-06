@@ -4,9 +4,11 @@ import { DashboardSidebar } from "./sidebar";
 
 export function DashboardLayout({ children }: { children: React.ReactNode }) {
   return (
-    <SidebarProvider defaultOpen={false} className="font-space-grotesk">
-      <DashboardSidebar />
-      <SidebarInset>{children}</SidebarInset>
-    </SidebarProvider>
+    <div className="font-space-grotesk">
+      <SidebarProvider defaultOpen={false}>
+        <DashboardSidebar />
+        <SidebarInset>{children}</SidebarInset>
+      </SidebarProvider>
+    </div>
   );
 }
