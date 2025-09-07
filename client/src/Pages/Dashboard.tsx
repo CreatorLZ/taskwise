@@ -117,9 +117,9 @@ export default function TaskDashboard() {
   const [inProgressTasksToShow, setInProgressTasksToShow] = useState(5);
   const [completedTasksToShow, setCompletedTasksToShow] = useState(5);
   const [searchQuery, setSearchQuery] = useState("");
-  const [sortBy, setSortBy] = useState<"dueDate" | "priority" | "title">(
-    "dueDate"
-  );
+  const [sortBy, setSortBy] = useState<
+    "default" | "dueDate" | "priority" | "title"
+  >("default");
 
   // const user = useAuthStore((state) => state.user);
   const userId = useAuthStore((state) => state.userId);
@@ -202,6 +202,8 @@ export default function TaskDashboard() {
       // Sort tasks
       filteredTasks.sort((a, b) => {
         switch (sortBy) {
+          case "default":
+            return 0; // Preserve backend sorting (newest first, then priority)
           case "dueDate":
             return (
               new Date(a.dueDate).getTime() - new Date(b.dueDate).getTime()
@@ -479,13 +481,18 @@ export default function TaskDashboard() {
                           <Select
                             value={sortBy}
                             onValueChange={(
-                              value: "dueDate" | "priority" | "title"
+                              value:
+                                | "default"
+                                | "dueDate"
+                                | "priority"
+                                | "title"
                             ) => setSortBy(value)}
                           >
                             <SelectTrigger>
                               <SelectValue placeholder="Sort by" />
                             </SelectTrigger>
                             <SelectContent>
+                              <SelectItem value="default">Default</SelectItem>
                               <SelectItem value="dueDate">Due Date</SelectItem>
                               <SelectItem value="priority">Priority</SelectItem>
                               <SelectItem value="title">Title</SelectItem>
