@@ -1,9 +1,6 @@
-import { GoogleGenerativeAI } from "@google/generative-ai";
 import Task from "../models/Task";
 import User from "../models/User";
-
-const genai = new GoogleGenerativeAI(process.env.GEMINI_API_KEY as string);
-const model = genai.getGenerativeModel({ model: "gemini-2.0-flash" });
+import geminiService from "../services/geminiService";
 
 function computeUserHabitMetrics(tasks: any[]) {
   // Calculate metrics for user habits
@@ -88,23 +85,27 @@ Tasks: ${JSON.stringify(
   )}
 `;
 
-  const response = await model.generateContent({
-    contents: [{ role: "user", parts: [{ text: prompt }] }],
-    generationConfig: {
-      maxOutputTokens: 400,
-      temperature: 0.7,
-      topP: 0.95,
-    },
+  const response = await geminiService.generateContent(prompt, {
+    maxOutputTokens: 1000,
+    temperature: 0.7,
+    topP: 0.95,
+    // @ts-ignore
+    responseMimeType: "application/json",
   });
 
-  const output = response.response.text();
+  const output = response;
+  // Clean output to remove Markdown code blocks
+  let cleanedOutput = output
+    .replace(/```json\s*/g, "")
+    .replace(/```\s*/g, "")
+    .trim();
   try {
-    return JSON.parse(output.trim());
+    return JSON.parse(cleanedOutput);
   } catch {
-    const jsonStart = output.indexOf("{");
-    const jsonEnd = output.lastIndexOf("}");
+    const jsonStart = cleanedOutput.indexOf("{");
+    const jsonEnd = cleanedOutput.lastIndexOf("}");
     if (jsonStart >= 0 && jsonEnd >= 0) {
-      return JSON.parse(output.substring(jsonStart, jsonEnd + 1));
+      return JSON.parse(cleanedOutput.substring(jsonStart, jsonEnd + 1));
     }
     throw new Error("Failed to parse Gemini insight response");
   }

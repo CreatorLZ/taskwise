@@ -1,8 +1,5 @@
-import { GoogleGenerativeAI } from "@google/generative-ai";
+import geminiService from "../services/geminiService";
 import Task from "../models/Task";
-
-const genai = new GoogleGenerativeAI(process.env.GEMINI_API_KEY as string);
-const model = genai.getGenerativeModel({ model: "gemini-1.5-flash" });
 
 export async function generateProductivityInsights(
   userId: string,
@@ -23,15 +20,20 @@ Return only a JSON object like:
 }
 Tasks: ${JSON.stringify(tasks, null, 2)}`;
 
-  const response = await model.generateContent({
-    contents: [{ role: "user", parts: [{ text: prompt }] }],
-    generationConfig: { maxOutputTokens: 300, temperature: 0.7 },
+  const response = await geminiService.generateContent(prompt, {
+    maxOutputTokens: 300,
+    temperature: 0.7,
   });
 
   // Extract JSON from response
-  const output = response.response.text();
+  const output = response;
+  // Clean output to remove Markdown code blocks
+  let cleanedOutput = output
+    .replace(/```json\s*/g, "")
+    .replace(/```\s*/g, "")
+    .trim();
   try {
-    const jsonMatch = output.match(/\{[\s\S]*\}/);
+    const jsonMatch = cleanedOutput.match(/\{[\s\S]*\}/);
     if (jsonMatch) {
       return JSON.parse(jsonMatch[0]);
     }

@@ -99,7 +99,7 @@ createRoot(document.getElementById("root")!).render(
           <RouterProvider router={router} />
           <Toaster />
           <Analytics />
-          <ReactQueryDevtools initialIsOpen={false} />
+          {/* <ReactQueryDevtools initialIsOpen={false} /> */}
         </QueryClientProvider>
       </HelmetProvider>
     </GoogleOAuthProvider>

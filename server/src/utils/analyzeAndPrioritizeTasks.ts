@@ -1,10 +1,6 @@
-import { GoogleGenerativeAI } from "@google/generative-ai";
 import { Types } from "mongoose";
 import Task from "../models/Task";
-
-// Initialize Gemini client with API key
-const genai = new GoogleGenerativeAI(process.env.GEMINI_API_KEY as string);
-const model = genai.getGenerativeModel({ model: "gemini-2.0-flash" });
+import geminiService from "../services/geminiService";
 
 interface IPriorityLog {
   oldPriority: string;
@@ -80,17 +76,13 @@ Rules:
 - Explain any changes in the reason field
 - Return only the JSON object, no other text`;
 
-    // Gemini API call
-    const response = await model.generateContent({
-      contents: [{ role: "user", parts: [{ text: analysisInput }] }],
-      generationConfig: {
-        maxOutputTokens: 500,
-        temperature: 0.6,
-        topP: 0.95,
-      },
+    // Gemini API call using centralized service
+    const output = await geminiService.generateContent(analysisInput, {
+      maxOutputTokens: 500,
+      temperature: 0.6,
+      topP: 0.95,
     });
 
-    let output: string = response.response.text();
     console.log("Model response:", output);
 
     // Extract JSON using regex

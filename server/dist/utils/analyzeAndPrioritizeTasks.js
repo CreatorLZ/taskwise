@@ -1,0 +1,126 @@
+"use strict";
+var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, generator) {
+    function adopt(value) { return value instanceof P ? value : new P(function (resolve) { resolve(value); }); }
+    return new (P || (P = Promise))(function (resolve, reject) {
+        function fulfilled(value) { try { step(generator.next(value)); } catch (e) { reject(e); } }
+        function rejected(value) { try { step(generator["throw"](value)); } catch (e) { reject(e); } }
+        function step(result) { result.done ? resolve(result.value) : adopt(result.value).then(fulfilled, rejected); }
+        step((generator = generator.apply(thisArg, _arguments || [])).next());
+    });
+};
+var __importDefault = (this && this.__importDefault) || function (mod) {
+    return (mod && mod.__esModule) ? mod : { "default": mod };
+};
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.analyzeAndPrioritizeTasks = void 0;
+const Task_1 = __importDefault(require("../models/Task"));
+const geminiService_1 = __importDefault(require("../services/geminiService"));
+const analyzeAndPrioritizeTasks = (userId) => __awaiter(void 0, void 0, void 0, function* () {
+    try {
+        if (!userId) {
+            throw new Error("userId is required but was not provided.");
+        }
+        const currentDate = new Date();
+        // Only analyze the first most recent uncompleted task for the user
+        const task = (yield Task_1.default.findOne({
+            userId,
+            completed: false,
+        })
+            .sort({ dueDate: 1, createdAt: 1 }) // soonest due, then oldest created
+            .exec());
+        if (!task) {
+            console.log(`No eligible tasks to analyze for user ${userId}.`);
+            return;
+        }
+        const { _id, title, description, priority, dueDate } = task;
+        console.log(`Analyzing task for user ${userId}: ${title}`);
+        // Prepare analysis prompt
+        const analysisInput = `Analyze this task and return only a JSON object with priority/status recommendations:
+Task: ${title}
+Description: ${description || "No description provided"}
+Current Priority: ${priority}
+Due Date: ${dueDate.toISOString()}
+Reference Date: ${currentDate.toISOString()}
+
+Required JSON format:
+{
+  "newPriority": "Low" | "Medium" | "High" | "Completed",
+  "newStatus": "Pending" | "In-progress" | "Completed",
+  "reason": "string explanation"
+}
+
+Rules:
+- If due date < reference date, set priority="High" and status="Pending"
+- Explain any changes in the reason field
+- Return only the JSON object, no other text`;
+        // Gemini API call using centralized service
+        const output = yield geminiService_1.default.generateContent(analysisInput, {
+            maxOutputTokens: 500,
+            temperature: 0.6,
+            topP: 0.95,
+        });
+        console.log("Model response:", output);
+        // Extract JSON using regex
+        const jsonRegex = /\{[\s\S]*?\}/g;
+        const matches = output.match(jsonRegex);
+        if (!matches) {
+            console.error("No JSON found in response for task:", title);
+            return;
+        }
+        // Take the longest match as it's likely the complete JSON
+        const jsonStr = matches.reduce((a, b) => (a.length > b.length ? a : b));
+        let aiResponse;
+        try {
+            aiResponse = JSON.parse(jsonStr);
+        }
+        catch (parseError) {
+            console.error("Failed to parse JSON for task:", title);
+            console.error("JSON string:", jsonStr);
+            return;
+        }
+        // Validate response structure
+        if (!aiResponse.newPriority ||
+            !aiResponse.newStatus ||
+            typeof aiResponse.reason !== "string") {
+            console.error("Invalid AI response structure for task:", title);
+            return;
+        }
+        // Update task if needed
+        const newPriority = aiResponse.newPriority;
+        const newStatus = aiResponse.newStatus;
+        const reason = aiResponse.reason;
+        let isUpdated = false;
+        if (newPriority !== priority) {
+            task.priorityLogs.push({
+                oldPriority: priority,
+                newPriority,
+                reason,
+                timestamp: new Date(),
+            });
+            task.priority = newPriority;
+            isUpdated = true;
+        }
+        if (newStatus !== task.status) {
+            task.status = newStatus;
+            isUpdated = true;
+        }
+        if (isUpdated) {
+            task.retouchedByAI = true;
+            yield task.save();
+            console.log(`Task "${title}" updated:`, {
+                priority: `${priority} → ${newPriority}`,
+                status: `${task.status} → ${newStatus}`,
+                reason,
+            });
+        }
+        else {
+            console.log(`No changes needed for task "${title}"`);
+        }
+        console.log(`Task analysis complete for user ${userId}`);
+    }
+    catch (error) {
+        console.error("Error during task analysis:", error);
+        throw new Error("Failed to analyze and prioritize tasks");
+    }
+});
+exports.analyzeAndPrioritizeTasks = analyzeAndPrioritizeTasks;

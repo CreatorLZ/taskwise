@@ -1,8 +1,5 @@
-import { GoogleGenerativeAI } from "@google/generative-ai";
+import geminiService from "../services/geminiService";
 import Task from "../models/Task";
-
-const genai = new GoogleGenerativeAI(process.env.GEMINI_API_KEY as string);
-const model = genai.getGenerativeModel({ model: "gemini-1.5-flash" });
 
 export async function generateProductivityInsights(userId: string) {
   const tasks = await Task.find({ userId });
@@ -27,17 +24,14 @@ Tasks: ${JSON.stringify(
   )}
 `;
 
-  const response = await model.generateContent({
-    contents: [{ role: "user", parts: [{ text: prompt }] }],
-    generationConfig: {
-      maxOutputTokens: 300,
-      temperature: 0.7,
-      topP: 0.95,
-    },
+  const response = await geminiService.generateContent(prompt, {
+    maxOutputTokens: 300,
+    temperature: 0.7,
+    topP: 0.95,
   });
 
   // Try to extract JSON from the response
-  const output = response.response.text();
+  const output = response;
   try {
     return JSON.parse(output.trim());
   } catch {

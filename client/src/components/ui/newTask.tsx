@@ -28,9 +28,13 @@ import { format } from "date-fns";
 import { cn } from "@/lib/utils";
 import { Calendar } from "@/components/ui/calendar";
 
-export function NewTaskModal() {
+interface NewTaskModalProps {
+  trigger?: React.ReactNode;
+}
+
+export function NewTaskModal({ trigger }: NewTaskModalProps) {
   const [open, setOpen] = useState(false);
-  const [isNlpMode, setIsNlpMode] = useState(false);
+  const [isNlpMode, setIsNlpMode] = useState(true);
   const [nlpInput, setNlpInput] = useState("");
   const [taskName, setTaskName] = useState("");
   const [description, setDescription] = useState("");
@@ -123,10 +127,14 @@ export function NewTaskModal() {
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
-        <Button>
-          <Plus className="w-4 h-4 mr-2" />
-          New Task
-        </Button>
+        {trigger ? (
+          trigger
+        ) : (
+          <Button>
+            <Plus className="w-4 h-4 mr-2" />
+            New Task
+          </Button>
+        )}
       </DialogTrigger>
       <DialogContent className="max-h-[90vh] overflow-y-auto">
         <DialogHeader>
@@ -143,16 +151,14 @@ export function NewTaskModal() {
               checked={isNlpMode}
               onCheckedChange={setIsNlpMode}
             />
-            <Label htmlFor="nlp-mode">
-              Use AI-powered natural language input
-            </Label>
+            <Label htmlFor="nlp-mode">Use AI Assistant</Label>
           </div>
           {isNlpMode ? (
             <div className="grid gap-2">
-              <Label htmlFor="nlp-input">Describe your task</Label>
+              <Label htmlFor="nlp-input">What would you like to do?</Label>
               <Textarea
                 id="nlp-input"
-                placeholder="E.g., Schedule a meeting for Monday at 10 AM"
+                placeholder="E.g., Remind me to call John at 5pm tomorrow"
                 value={nlpInput}
                 onChange={(e) => setNlpInput(e.target.value)}
               />
