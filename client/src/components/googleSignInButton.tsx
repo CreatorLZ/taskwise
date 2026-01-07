@@ -7,7 +7,6 @@ import useAuthStore from "@/store/authstore";
 import { useNavigate } from "react-router-dom";
 import { useQueryClient } from "@tanstack/react-query";
 import useTaskStore from "@/store/taskStore";
-import { requestNotificationPermission } from "@/firebase.ts";
 
 interface GoogleSignInButtonProps {
   className?: string;
@@ -62,16 +61,7 @@ const GoogleSignInButton = ({
         setUserId(userId);
         setAIEnabled(user.taskAnalysisSchedule.enabled);
 
-        // Request notification permission and get FCM token
-        const fcmToken = await requestNotificationPermission();
-        if (fcmToken) {
-          // Update user's FCM token in backend
-          await api.put("/users/update-fcm-token", {
-            userId,
-            fcmToken,
-          });
-          //   console.log(fcmToken);
-        }
+        // Note: Notification permission is now requested via NotificationPrompt component on dashboard
 
         const clearTasks = useTaskStore.getState().clearTasks;
         clearTasks();

@@ -4,6 +4,7 @@ import { NewTaskModal } from "./ui/newTask";
 import { SidebarProvider, SidebarInset } from "@/components/ui/sidebar";
 import { DashboardSidebar } from "./sidebar";
 import type React from "react";
+import { NotificationPrompt } from "./ui/NotificationPrompt";
 
 export function DashboardLayout({ children }: { children: React.ReactNode }) {
   return (
@@ -26,6 +27,8 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
           }
         />
       </div>
+
+      <NotificationPrompt />
     </div>
   );
 }
