@@ -2,9 +2,13 @@ import useAuthStore from "@/store/authstore";
 import axios from "axios";
 import { toast } from "sonner";
 
+const baseURL =
+  import.meta.env.VITE_ENVIRONMENT === "production"
+    ? "https://taskwise-wibu.onrender.com/api"
+    : "http://localhost:3000/api";
+
 const api = axios.create({
-  baseURL: "http://localhost:3000/api",
-  // baseURL: "https://taskwise-wibu.onrender.com/api",
+  baseURL,
 });
 
 api.interceptors.request.use((config) => {

@@ -7,7 +7,7 @@ import TaskDashboard from "./Pages/Dashboard.tsx";
 import RegisterPage from "./Pages/Register.tsx";
 import LoginPage from "./Pages/Login.tsx";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { ReactQueryDevtools } from "@tanstack/react-query-devtools";
+// import { ReactQueryDevtools } from "@tanstack/react-query-devtools";
 import ProtectedRoute from "./ProtectedRoute.tsx";
 import { DashboardLayout } from "./components/dashboardLayout.tsx";
 import PublicRoute from "./PublicRoute.tsx";
