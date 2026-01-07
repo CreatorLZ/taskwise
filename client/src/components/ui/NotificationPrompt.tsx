@@ -8,9 +8,13 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { requestNotificationPermission } from "@/firebase";
+import {
+  requestNotificationPermission,
+  setupMessageListener,
+} from "@/firebase";
 import api from "@/utils/api";
 import useAuthStore from "@/store/authstore";
+import { toast } from "sonner";
 
 const NOTIFICATION_PROMPT_KEY = "notificationPromptDismissed";
 
@@ -38,17 +42,38 @@ export function NotificationPrompt() {
   const handleEnable = async () => {
     setIsRequesting(true);
     try {
+      // This will register the service worker and initialize Firebase messaging
+      // Only NOW will Chrome potentially show the LNA prompt (with user context)
       const fcmToken = await requestNotificationPermission();
+
       if (fcmToken && userId) {
+        // Update FCM token in backend
         await api.put("/users/update-fcm-token", {
           userId,
           fcmToken,
         });
+
+        // Set up foreground message listener for toast notifications
+        setupMessageListener((payload) => {
+          toast(payload?.notification?.title, {
+            description: payload?.notification?.body,
+            icon: <Bell className="size-5" />,
+            duration: 5000,
+          });
+        });
+
+        toast.success("Notifications enabled!", {
+          description: "You'll receive reminders about your tasks.",
+        });
       }
+
       setIsVisible(false);
       localStorage.setItem(NOTIFICATION_PROMPT_KEY, "true");
     } catch (error) {
       console.error("Failed to enable notifications:", error);
+      toast.error("Failed to enable notifications", {
+        description: "Please try again later.",
+      });
     } finally {
       setIsRequesting(false);
     }

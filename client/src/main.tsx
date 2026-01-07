@@ -11,36 +11,14 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import ProtectedRoute from "./ProtectedRoute.tsx";
 import { DashboardLayout } from "./components/dashboardLayout.tsx";
 import PublicRoute from "./PublicRoute.tsx";
-import { toast, Toaster } from "sonner";
-import { onMessageListener } from "./firebase.ts";
-import { Bell } from "lucide-react";
+import { Toaster } from "sonner";
 import { HelmetProvider } from "react-helmet-async";
 import { Analytics } from "@vercel/analytics/react";
 import { GoogleOAuthProvider } from "@react-oauth/google";
 import TodoList from "./Pages/TodoList.tsx";
 
-// Firebase Cloud Messaging foreground message handler
-
-onMessageListener((payload) => {
-  // console.log("Message received. ", payload);
-  toast(payload?.notification?.title, {
-    description: payload?.notification?.body,
-    icon: <Bell className="size-5" />,
-    duration: 5000,
-  });
-});
-
-// Register Firebase Service Worker
-if ("serviceWorker" in navigator) {
-  navigator.serviceWorker
-    .register("/firebase-messaging-sw.js")
-    // .then((registration) => {
-    //   // console.log("Service Worker registered successfully:", registration);
-    // })
-    .catch((error) => {
-      console.error("Service Worker registration failed:", error);
-    });
-}
+// NOTE: Firebase messaging is now lazy-loaded in NotificationPrompt.tsx
+// This prevents Chrome's "Local Network Access" prompt from appearing on page load
 
 const router = createBrowserRouter([
   {
