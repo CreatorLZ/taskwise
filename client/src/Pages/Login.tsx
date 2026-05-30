@@ -19,6 +19,7 @@ import { useQueryClient } from "@tanstack/react-query";
 import useTaskStore from "@/store/taskStore";
 import GoogleSignInButton from "@/components/googleSignInButton";
 import { Separator } from "@/components/ui/separator";
+import { AxiosError } from "axios";
 
 export default function LoginPage() {
   const [isLoading, setIsLoading] = useState(false);
@@ -29,9 +30,7 @@ export default function LoginPage() {
   const queryClient = useQueryClient();
 
   // Zustand store actions
-  const setUser = useAuthStore((state) => state.setUser);
-  const setUserId = useAuthStore((state) => state.setUserId);
-  const setToken = useAuthStore((state) => state.setToken);
+  const setAuth = useAuthStore((state) => state.setAuth);
   const setTasks = useTaskStore((state) => state.setTasks);
   const setAIEnabled = useTaskStore((state) => state.setAIEnabled);
 
@@ -44,32 +43,35 @@ export default function LoginPage() {
       const response = await api.post("/auth/login", { email, password });
       const { token, user, userId } = response.data;
 
-      setUser(user);
-      setToken(token);
-      setUserId(userId);
-      setAIEnabled(user.taskAnalysisSchedule.enabled);
+      setAuth({ user, token, userId });
+      setAIEnabled(Boolean(user.taskAnalysisSchedule?.enabled));
 
       // Note: Notification permission is now requested via NotificationPrompt component on dashboard
 
       const clearTasks = useTaskStore.getState().clearTasks;
       clearTasks();
 
-      // Prefetch tasks after successful login
-      await queryClient.prefetchQuery({
-        queryKey: ["tasks", userId],
-        queryFn: async () => {
-          const response = await api.get(`/tasks/user/${userId}`);
-          setTasks(response.data);
-          return response.data;
-        },
-      });
+      queryClient
+        .prefetchQuery({
+          queryKey: ["tasks", userId],
+          queryFn: async () => {
+            const response = await api.get(`/tasks/user/${userId}`);
+            setTasks(Array.isArray(response.data) ? response.data : []);
+            return response.data;
+          },
+        })
+        .catch((error) => {
+          console.warn("Task prefetch failed after login:", error);
+        });
 
       // Navigate to user dashboard
       navigate("/dashboard");
-    } catch (error: any) {
+    } catch (error: unknown) {
       // Handle API errors
-      const errorResponse = error?.response?.data?.message || "Login failed";
-      console.log(error);
+      const errorResponse =
+        error instanceof AxiosError
+          ? error.response?.data?.message || "Login failed"
+          : "Login failed";
       setErrorMessage(errorResponse);
     } finally {
       setIsLoading(false);
@@ -147,13 +149,19 @@ export default function LoginPage() {
             </div>
           </form>
         </CardContent>
-        <CardFooter>
+        <CardFooter className="flex-col gap-2">
           <p className="text-sm text-center w-full text-muted-foreground">
             Don&apos;t have an account?{" "}
             <Link to="/register" className="text-primary hover:underline">
               Register
             </Link>
           </p>
+          <Link
+            to="/reset-password"
+            className="text-sm text-muted-foreground hover:text-primary hover:underline"
+          >
+            Forgot your password?
+          </Link>
         </CardFooter>
       </Card>
     </div>

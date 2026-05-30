@@ -19,6 +19,7 @@ import {
 } from "../components/ui/card";
 
 import { Button } from "../components/ui/button";
+import { ThemeToggle } from "@/components/theme-toggle";
 // import {Button} from "@/components/ui/button";
 import "../global.css";
 
@@ -35,7 +36,7 @@ function Landing() {
             Taskwise
           </span>
         </Link>
-        <nav className="ml-auto flex gap-4 sm:gap-6">
+        <nav className="ml-auto hidden gap-4 sm:flex sm:gap-6">
           <Link
             to="#"
             className="text-sm font-medium hover:text-primary transition-colors"
@@ -63,6 +64,9 @@ function Landing() {
             Contact
           </Link>
         </nav>
+        <div className="ml-auto sm:ml-4">
+          <ThemeToggle />
+        </div>
       </header>
       <main className="flex-1 relative max-w-screen overflow-hidden">
         {/* Animated background gradients */}
@@ -108,7 +112,7 @@ function Landing() {
                       className="relative group w-full py-7 max-w-xs"
                     >
                       <div className="absolute -inset-0.5 bg-gradient-to-r from-purple-600 to-pink-600 rounded-lg blur opacity-30 group-hover:opacity-100 transition duration-1000 group-hover:duration-200" />
-                      <div className="relative bg-white dark:bg-gray-950 rounded-lg flex items-center justify-center px-8 py-2 text-black min-w-full">
+                      <div className="relative bg-white dark:bg-gray-950 rounded-lg flex items-center justify-center px-8 py-2 text-foreground min-w-full">
                         Get Started For Free
                         <ArrowRight className="ml-2 h-4 w-4" />
                       </div>
@@ -290,7 +294,7 @@ function Landing() {
                 <Link to="/login">
                   <Button size="lg" className="relative group py-8">
                     <div className="absolute -inset-0.5 bg-gradient-to-r from-purple-600 to-pink-600 rounded-lg blur opacity-30 group-hover:opacity-100 transition duration-1000 group-hover:duration-200" />
-                    <div className="relative bg-white dark:bg-gray-950 rounded-lg flex items-center px-8 py-2 text-black">
+                    <div className="relative bg-white dark:bg-gray-950 rounded-lg flex items-center px-8 py-2 text-foreground">
                       Start Free Trial
                       <ArrowRight className="ml-2 h-4 w-4" />
                     </div>

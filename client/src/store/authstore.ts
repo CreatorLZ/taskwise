@@ -2,13 +2,28 @@ import { create } from "zustand";
 import { persist } from "zustand/middleware";
 
 interface AuthState {
-  user: any | null;
+  user: AuthUser | null;
   token: string | null;
   userId: string | null;
-  setUser: (user: any) => void;
+  setAuth: (auth: { user: AuthUser; token: string; userId: string }) => void;
+  setUser: (user: AuthUser) => void;
   setToken: (token: string) => void;
   setUserId: (userId: string) => void;
   logout: () => void;
+}
+
+export interface AuthUser {
+  _id?: string;
+  username: string;
+  email: string;
+  avatar?: string;
+  emailVerified?: boolean;
+  taskAnalysisSchedule?: {
+    firstRunTime?: string;
+    secondRunTime?: string;
+    enabled?: boolean;
+  };
+  authProvider?: "local" | "google";
 }
 
 const useAuthStore = create(
@@ -17,6 +32,7 @@ const useAuthStore = create(
       user: null,
       token: null,
       userId: null,
+      setAuth: ({ user, token, userId }) => set({ user, token, userId }),
       setUser: (user) => set({ user }),
       setToken: (token) => set({ token }),
       setUserId: (userId) => set({ userId }),

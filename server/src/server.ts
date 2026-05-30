@@ -1,5 +1,6 @@
 import express, { Application, Request, Response } from "express";
 import cors from "cors";
+import helmet from "helmet";
 import { config } from "dotenv";
 import taskRoutes from "./routes/taskRoutes";
 import authRoutes from "./routes/authRoutes";
@@ -11,7 +12,9 @@ import insights from "./routes/insights";
 import connectDB from "./config/db";
 import userRoutes from "./routes/userRoutes";
 import "./cron/reminderCron";
+import "./cron/RecurrenceCron";
 import { taskAnalysisScheduler } from "./cron/TaskAnalysisScheduler";
+import { generalLimiter, aiLimiter } from "./middleware/rateLimiter";
 
 // Load environment variables
 config();
@@ -22,14 +25,39 @@ connectDB();
 const app: Application = express();
 const port = process.env.PORT;
 
-// Middleware to parse JSON
-app.use(express.json());
+// Security: Helmet for security headers
+app.use(
+  helmet({
+    crossOriginEmbedderPolicy: false, // Allow embedding for OAuth popups
+    contentSecurityPolicy: {
+      directives: {
+        defaultSrc: ["'self'"],
+        scriptSrc: ["'self'", "'unsafe-inline'", "https://accounts.google.com"],
+        styleSrc: ["'self'", "'unsafe-inline'", "https://fonts.googleapis.com"],
+        fontSrc: ["'self'", "https://fonts.gstatic.com"],
+        imgSrc: ["'self'", "data:", "https:"],
+        connectSrc: [
+          "'self'",
+          "https://generativelanguage.googleapis.com",
+          "https://fcm.googleapis.com",
+        ],
+      },
+    },
+  })
+);
+
+// Apply general rate limiter to all routes
+app.use(generalLimiter);
+
+// Middleware to parse JSON with size limit
+app.use(express.json({ limit: "10kb" }));
+app.use(express.urlencoded({ extended: true, limit: "10kb" }));
 
 // Enable CORS
 app.use(
   cors({
     origin: ["http://localhost:5173", "https://taskwise-three.vercel.app"],
-    methods: ["GET", "POST", "PUT", "DELETE", "PATCH"], // Allowed HTTP methods
+    methods: ["GET", "POST", "PUT", "DELETE", "PATCH"],
     credentials: true,
   })
 );

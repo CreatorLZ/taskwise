@@ -1,578 +1,545 @@
 "use client";
 
-import { useState, useEffect } from "react";
-import { Search, Star, SunMedium, X, MoreVertical } from "lucide-react";
+import { useEffect, useMemo, useState } from "react";
+import {
+  Check,
+  CheckCircle2,
+  ChevronDown,
+  Circle,
+  ListTodo,
+  MoreHorizontal,
+  Pin,
+  Plus,
+  Search,
+  SlidersHorizontal,
+  Star,
+  Trash2,
+  X,
+} from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Badge } from "@/components/ui/badge";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
-  DropdownMenuTrigger,
   DropdownMenuSeparator,
+  DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { cn } from "@/lib/utils";
 
-// Theme options
-const themeOptions = {
-  colors: [
-    { name: "Default", value: "bg-white" },
-    { name: "Purple", value: "bg-purple-100" },
-    { name: "Pink", value: "bg-pink-100" },
-    { name: "Coral", value: "bg-red-100" },
-    { name: "Green", value: "bg-emerald-100" },
-    { name: "Teal", value: "bg-teal-100" },
-    { name: "Gray", value: "bg-gray-100" },
-    { name: "Light Blue", value: "bg-sky-100" },
-    { name: "Light Pink", value: "bg-rose-50" },
-  ],
-  images: [
-    {
-      name: "Tropical",
-      value:
-        "bg-[url('https://c37uf7lofs.ufs.sh/f/GSgiKERmD2ElMZQO2i6DG9iArtUJ8yRPIZl4ShEFqjmKYB7X')] bg-cover",
-    },
-    {
-      name: "Birds",
-      value:
-        "bg-[url('https://c37uf7lofs.ufs.sh/f/GSgiKERmD2ElFIBDBoKaNDB8ompjGMw0fzr2gXLVEZ7x96YJ')] bg-cover",
-    },
-    {
-      name: "Beach Dawn",
-      value:
-        "bg-[url('https://c37uf7lofs.ufs.sh/f/GSgiKERmD2ElGvEQCzRmD2Elk5vfrnOaZYyC7K1BAwceSjWz')] bg-cover",
-    },
-    {
-      name: "Beach Day",
-      value:
-        "bg-[url('https://c37uf7lofs.ufs.sh/f/GSgiKERmD2ElXGAvvnLZl4aPEYqDsAeyp1ohtvN7uzT6wL2j')] bg-cover",
-    },
-    {
-      name: "Night sky",
-      value:
-        "bg-[url('https://c37uf7lofs.ufs.sh/f/GSgiKERmD2ElmuG6fKkMMnjUfgX8r3SqvWHYBkbwRl9dzA5y')] bg-cover",
-    },
-  ],
-};
+type Priority = "Low" | "Medium" | "High";
+type Filter = "open" | "all" | "pinned" | "completed";
+type SortMode = "created" | "priority" | "title";
 
-// Define the Task type
-type Task = {
+type TodoTask = {
   id: string;
   title: string;
   completed: boolean;
-  priority: "Low" | "Medium" | "High";
-  createdAt: Date;
+  priority: Priority;
+  createdAt: string;
   pinned: boolean;
 };
 
-// Priority color mapping
-const priorityColors = {
-  High: "text-red-500 bg-red-50",
-  Medium: "text-orange-500 bg-orange-50",
-  Low: "text-blue-500 bg-blue-50",
+const STORAGE_KEY = "taskwise.todos";
+const LEGACY_STORAGE_KEY = "tasks";
+
+const priorityRank: Record<Priority, number> = {
+  High: 3,
+  Medium: 2,
+  Low: 1,
 };
 
-export default function TodoList() {
-  // State for tasks
-  const [tasks, setTasks] = useState<Task[]>(() => {
-    // Load tasks from localStorage if available
-    if (typeof window !== "undefined") {
-      const savedTasks = localStorage.getItem("tasks");
-      return savedTasks ? JSON.parse(savedTasks) : [];
-    }
+const priorityDot: Record<Priority, string> = {
+  High: "bg-rose-500",
+  Medium: "bg-amber-500",
+  Low: "bg-sky-500",
+};
+
+const readStoredTasks = (): TodoTask[] => {
+  if (typeof window === "undefined") return [];
+
+  const rawTasks =
+    localStorage.getItem(STORAGE_KEY) || localStorage.getItem(LEGACY_STORAGE_KEY);
+  if (!rawTasks) return [];
+
+  try {
+    const parsed = JSON.parse(rawTasks);
+    if (!Array.isArray(parsed)) return [];
+
+    return parsed
+      .filter((task) => typeof task?.title === "string")
+      .map((task) => ({
+        id: String(task.id || crypto.randomUUID()),
+        title: task.title,
+        completed: Boolean(task.completed),
+        priority: ["Low", "Medium", "High"].includes(task.priority)
+          ? task.priority
+          : "Medium",
+        createdAt: task.createdAt
+          ? new Date(task.createdAt).toISOString()
+          : new Date().toISOString(),
+        pinned: Boolean(task.pinned),
+      }));
+  } catch {
     return [];
-  });
+  }
+};
 
-  // State for new task input
+const formatDay = () =>
+  new Intl.DateTimeFormat(undefined, {
+    weekday: "long",
+    month: "long",
+    day: "numeric",
+  }).format(new Date());
+
+export default function TodoList() {
+  const [tasks, setTasks] = useState<TodoTask[]>(readStoredTasks);
   const [newTask, setNewTask] = useState("");
-
-  // State for search query
+  const [newPriority, setNewPriority] = useState<Priority>("Medium");
+  const [searchOpen, setSearchOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
+  const [filter, setFilter] = useState<Filter>("open");
+  const [sortMode, setSortMode] = useState<SortMode>("created");
+  const [showCompleted, setShowCompleted] = useState(true);
 
-  // State for priority filter
-  const [priorityFilter, setPriorityFilter] = useState<string | null>(null);
-
-  // State for theme
-  const [theme, setTheme] = useState<string>(() => {
-    if (typeof window !== "undefined") {
-      const savedTheme = localStorage.getItem("theme");
-      return savedTheme || "bg-white";
-    }
-    return "bg-white";
-  });
-
-  const [activeTab, setActiveTab] = useState<string>(() => {
-    if (typeof window !== "undefined") {
-      const savedTab = localStorage.getItem("activeTab");
-      return savedTab || "all";
-    }
-    return "all";
-  });
-
-  // Save tasks to localStorage whenever they change
   useEffect(() => {
-    localStorage.setItem("tasks", JSON.stringify(tasks));
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(tasks));
   }, [tasks]);
 
-  //  save the theme to localStorage
-  useEffect(() => {
-    localStorage.setItem("theme", theme);
-  }, [theme]);
+  const openCount = useMemo(
+    () => tasks.filter((task) => !task.completed).length,
+    [tasks]
+  );
 
-  //  save the active tab to localStorage
-  useEffect(() => {
-    localStorage.setItem("activeTab", activeTab);
-  }, [activeTab]);
+  const completedCount = tasks.length - openCount;
 
-  // Add a new task
+  const visibleTasks = useMemo(() => {
+    return tasks
+      .filter((task) => {
+        const query = searchQuery.trim().toLowerCase();
+        const matchesSearch = !query || task.title.toLowerCase().includes(query);
+        const matchesFilter =
+          filter === "all" ||
+          (filter === "open" && !task.completed) ||
+          (filter === "completed" && task.completed) ||
+          (filter === "pinned" && task.pinned);
+
+        return matchesSearch && matchesFilter;
+      })
+      .sort((a, b) => {
+        if (a.pinned !== b.pinned) return a.pinned ? -1 : 1;
+        if (a.completed !== b.completed) return a.completed ? 1 : -1;
+
+        if (sortMode === "priority") {
+          return priorityRank[b.priority] - priorityRank[a.priority];
+        }
+
+        if (sortMode === "title") {
+          return a.title.localeCompare(b.title);
+        }
+
+        return (
+          new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+        );
+      });
+  }, [filter, searchQuery, sortMode, tasks]);
+
+  const openTasks = visibleTasks.filter((task) => !task.completed);
+  const completedTasks = visibleTasks.filter((task) => task.completed);
+
   const addTask = () => {
-    if (newTask.trim() === "") return;
+    const title = newTask.trim();
+    if (!title) return;
 
-    const task: Task = {
-      id: Date.now().toString(),
-      title: newTask,
-      completed: false,
-      priority: "Medium", // Default priority
-      createdAt: new Date(),
-      pinned: false,
-    };
-
-    setTasks([task, ...tasks]);
+    setTasks((currentTasks) => [
+      {
+        id: crypto.randomUUID(),
+        title,
+        completed: false,
+        priority: newPriority,
+        createdAt: new Date().toISOString(),
+        pinned: false,
+      },
+      ...currentTasks,
+    ]);
     setNewTask("");
+    setFilter("open");
   };
 
-  // Toggle task completion
-  const toggleTaskCompletion = (id: string) => {
-    setTasks(
-      tasks.map((task) =>
-        task.id === id ? { ...task, completed: !task.completed } : task
+  const updateTask = (id: string, updates: Partial<TodoTask>) => {
+    setTasks((currentTasks) =>
+      currentTasks.map((task) =>
+        task.id === id ? { ...task, ...updates } : task
       )
     );
   };
 
-  // Delete a task
   const deleteTask = (id: string) => {
-    setTasks(tasks.filter((task) => task.id !== id));
+    setTasks((currentTasks) => currentTasks.filter((task) => task.id !== id));
   };
 
-  // Change task priority
-  const changePriority = (id: string) => {
-    setTasks(
-      tasks.map((task) => {
-        if (task.id === id) {
-          const priorities: Array<"Low" | "Medium" | "High"> = [
-            "Low",
-            "Medium",
-            "High",
-          ];
-          const currentIndex = priorities.indexOf(task.priority);
-          const nextIndex = (currentIndex + 1) % priorities.length;
-          return { ...task, priority: priorities[nextIndex] };
-        }
-        return task;
-      })
-    );
-  };
-
-  //  sort tasks with pinned items at the top
-  const sortTasks = (tasksToSort: Task[]): Task[] => {
-    return [...tasksToSort].sort((a, b) => {
-      // Sort by pinned status first (pinned tasks come first)
-      if (a.pinned && !b.pinned) return -1;
-      if (!a.pinned && b.pinned) return 1;
-
-      // Then sort by creation date (newest first)
-      return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
-    });
-  };
-
-  //  the togglePinTask function to reorders tasks
-  const togglePinTask = (id: string) => {
-    setTasks((prevTasks) => {
-      const updatedTasks = prevTasks.map((task) =>
-        task.id === id ? { ...task, pinned: !task.pinned } : task
-      );
-      return sortTasks(updatedTasks);
-    });
-  };
-
-  //  filterTasks function to use the sorted tasks
-  const filterTasks = (tasksToFilter: Task[], tab: string) => {
-    const filteredBySearch = tasksToFilter.filter(
-      (task) =>
-        task.title.toLowerCase().includes(searchQuery.toLowerCase()) &&
-        (priorityFilter === null || task.priority === priorityFilter)
-    );
-
-    const filteredByTab = filteredBySearch.filter((task) => {
-      if (tab === "pinned") return task.pinned;
-      if (tab === "all") return true;
-      if (tab === "active") return !task.completed;
-      if (tab === "completed") return task.completed;
-      return true;
-    });
-
-    return filteredByTab;
-  };
-
-  // Get stats
-  const stats = {
-    all: tasks.length,
-    active: tasks.filter((t) => !t.completed).length,
-    completed: tasks.filter((t) => t.completed).length,
-    pinned: tasks.filter((t) => t.pinned).length,
+  const clearCompleted = () => {
+    setTasks((currentTasks) => currentTasks.filter((task) => !task.completed));
   };
 
   return (
-    <div className={`min-h-screen ${theme} transition-colors duration-300`}>
-      <div className="w-full p-4 md:p-6 pb-24">
-        {/* Header with Settings */}
-        <div className="flex justify-between items-center mb-6 mt-6">
-          <h1 className="text-2xl font-semibold">Todo List</h1>
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
+    <main className="min-h-screen bg-muted/30 px-3 py-4 text-foreground sm:px-6 lg:px-8">
+      <div className="mx-auto flex w-full max-w-3xl flex-col gap-4">
+        <header className="rounded-lg border bg-card px-4 py-4 shadow-sm sm:px-5">
+          <div className="flex items-start justify-between gap-3">
+            <div>
+              <div className="flex items-center gap-2 text-muted-foreground">
+                <ListTodo className="h-4 w-4" />
+                <span className="text-sm">{formatDay()}</span>
+              </div>
+              <h1 className="mt-2 text-2xl font-semibold sm:text-3xl">Todo</h1>
+              <p className="mt-1 text-sm text-muted-foreground">
+                {openCount} open · {completedCount} completed
+              </p>
+            </div>
+
+            <div className="flex items-center gap-1">
               <Button
                 variant="ghost"
                 size="icon"
-                className="bg-gray-100"
-                title="Themes"
+                className="h-9 w-9"
+                onClick={() => setSearchOpen((value) => !value)}
+                aria-label="Search todos"
               >
-                <MoreVertical className="h-5 w-5" />
+                <Search className="h-4 w-4" />
               </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" className="w-[300px]">
-              <div className="px-2 py-2">
-                <h4 className="mb-2 text-sm font-medium leading-none">Theme</h4>
-                <div className="grid grid-cols-5 gap-2">
-                  {themeOptions.colors.map((color) => (
-                    <button
-                      key={color.value}
-                      onClick={() => setTheme(color.value)}
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="h-9 w-9"
+                    aria-label="Todo options"
+                  >
+                    <SlidersHorizontal className="h-4 w-4" />
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end" className="w-48">
+                  <DropdownMenuItem onClick={() => setSortMode("created")}>
+                    Newest first
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => setSortMode("priority")}>
+                    Priority first
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => setSortMode("title")}>
+                    A to Z
+                  </DropdownMenuItem>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem onClick={clearCompleted}>
+                    Clear completed
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+            </div>
+          </div>
+
+          {searchOpen && (
+            <div className="relative mt-4">
+              <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+              <Input
+                value={searchQuery}
+                onChange={(event) => setSearchQuery(event.target.value)}
+                placeholder="Search"
+                className="h-10 pl-9 pr-9"
+                autoFocus
+              />
+              {searchQuery && (
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="absolute right-1 top-1/2 h-8 w-8 -translate-y-1/2"
+                  onClick={() => setSearchQuery("")}
+                  aria-label="Clear search"
+                >
+                  <X className="h-4 w-4" />
+                </Button>
+              )}
+            </div>
+          )}
+        </header>
+
+        <section className="rounded-lg border bg-card p-2 shadow-sm">
+          <div className="flex flex-col gap-2 sm:flex-row">
+            <div className="relative flex-1">
+              <Plus className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-primary" />
+              <Input
+                value={newTask}
+                onChange={(event) => setNewTask(event.target.value)}
+                onKeyDown={(event) => {
+                  if (event.key === "Enter") addTask();
+                }}
+                placeholder="Add a task"
+                className="h-11 border-0 pl-9 shadow-none focus-visible:ring-0"
+              />
+            </div>
+            <div className="flex gap-2">
+              <Select
+                value={newPriority}
+                onValueChange={(value: Priority) => setNewPriority(value)}
+              >
+                <SelectTrigger className="h-11 w-[126px]">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="High">High</SelectItem>
+                  <SelectItem value="Medium">Medium</SelectItem>
+                  <SelectItem value="Low">Low</SelectItem>
+                </SelectContent>
+              </Select>
+              <Button onClick={addTask} className="h-11 px-4">
+                Add
+              </Button>
+            </div>
+          </div>
+        </section>
+
+        <nav className="flex gap-2 overflow-x-auto pb-1">
+          <FilterButton
+            active={filter === "open"}
+            label="Open"
+            count={openCount}
+            onClick={() => setFilter("open")}
+          />
+          <FilterButton
+            active={filter === "all"}
+            label="All"
+            count={tasks.length}
+            onClick={() => setFilter("all")}
+          />
+          <FilterButton
+            active={filter === "pinned"}
+            label="Pinned"
+            count={tasks.filter((task) => task.pinned).length}
+            onClick={() => setFilter("pinned")}
+          />
+          <FilterButton
+            active={filter === "completed"}
+            label="Completed"
+            count={completedCount}
+            onClick={() => setFilter("completed")}
+          />
+        </nav>
+
+        <section className="overflow-hidden rounded-lg border bg-card shadow-sm">
+          {visibleTasks.length === 0 ? (
+            <EmptyState hasSearch={Boolean(searchQuery)} />
+          ) : (
+            <div className="divide-y">
+              {openTasks.map((task) => (
+                <TodoRow
+                  key={task.id}
+                  task={task}
+                  onUpdate={updateTask}
+                  onDelete={deleteTask}
+                />
+              ))}
+
+              {completedTasks.length > 0 && filter !== "open" && (
+                <div>
+                  <button
+                    className="flex w-full items-center justify-between px-4 py-3 text-left text-sm font-medium text-muted-foreground hover:bg-accent/50"
+                    onClick={() => setShowCompleted((value) => !value)}
+                  >
+                    <span>Completed</span>
+                    <ChevronDown
                       className={cn(
-                        "w-12 h-12 rounded-lg border-2 transition-all",
-                        color.value,
-                        theme === color.value
-                          ? "border-primary ring-2 ring-primary ring-offset-2"
-                          : "border-transparent hover:border-primary/50"
+                        "h-4 w-4 transition-transform",
+                        !showCompleted && "-rotate-90"
                       )}
-                      title={color.name}
                     />
-                  ))}
+                  </button>
+                  {showCompleted &&
+                    completedTasks.map((task) => (
+                      <TodoRow
+                        key={task.id}
+                        task={task}
+                        onUpdate={updateTask}
+                        onDelete={deleteTask}
+                      />
+                    ))}
                 </div>
-                <div className="grid grid-cols-5 gap-2 mt-2">
-                  {themeOptions.images.map((image) => (
-                    <button
-                      key={image.value}
-                      onClick={() => setTheme(image.value)}
-                      className={cn(
-                        "w-12 h-12 rounded-lg border-2 bg-cover bg-center transition-all",
-                        image.value.includes("url") ? image.value : "",
-                        theme === image.value
-                          ? "border-primary ring-2 ring-primary ring-offset-2"
-                          : "border-transparent hover:border-primary/50"
-                      )}
-                      title={image.name}
-                    />
-                  ))}
-                </div>
-              </div>
-              <DropdownMenuSeparator />
-              <DropdownMenuItem>Print list</DropdownMenuItem>
-              <DropdownMenuItem>Email list</DropdownMenuItem>
-              <DropdownMenuSeparator />
-              <DropdownMenuItem className="text-red-600">
-                Clear all tasks
-              </DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
-        </div>
-
-        {/* Search and Filter */}
-        <div className="mb-6 flex flex-col md:flex-row gap-3">
-          <div className="relative flex-1">
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
-            <Input
-              placeholder="Search tasks..."
-              className="pl-10"
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-            />
-          </div>
-          <div className="flex flex-wrap gap-2">
-            <Button
-              variant={priorityFilter === null ? "default" : "outline"}
-              size="sm"
-              onClick={() => setPriorityFilter(null)}
-              className={priorityFilter === null ? "bg-[#0f172a]" : ""}
-            >
-              All
-            </Button>
-            <Button
-              variant={priorityFilter === "High" ? "default" : "outline"}
-              size="sm"
-              onClick={() => setPriorityFilter("High")}
-              className={
-                priorityFilter === "High"
-                  ? "bg-red-500"
-                  : "text-red-500 border-red-200"
-              }
-            >
-              High
-            </Button>
-            <Button
-              variant={priorityFilter === "Medium" ? "default" : "outline"}
-              size="sm"
-              onClick={() => setPriorityFilter("Medium")}
-              className={
-                priorityFilter === "Medium"
-                  ? "bg-orange-500"
-                  : "text-orange-500 border-orange-200"
-              }
-            >
-              Medium
-            </Button>
-            <Button
-              variant={priorityFilter === "Low" ? "default" : "outline"}
-              size="sm"
-              onClick={() => setPriorityFilter("Low")}
-              className={
-                priorityFilter === "Low"
-                  ? "bg-blue-500"
-                  : "text-blue-500 border-blue-200"
-              }
-            >
-              Low
-            </Button>
-          </div>
-        </div>
-
-        {/* Tabs */}
-        <Tabs value={activeTab} onValueChange={setActiveTab} className="mb-6">
-          <TabsList className="grid grid-cols-2 md:flex md:flex-wrap gap-1 mb-12 md:mb-10 w-full">
-            <TabsTrigger className="md:flex-1 min-w-[80px]" value="pinned">
-              Pinned
-              <Badge variant="outline" className="ml-2">
-                {stats.pinned}
-              </Badge>
-            </TabsTrigger>
-            <TabsTrigger className="md:flex-1 min-w-[80px]" value="all">
-              All
-              <Badge variant="outline" className="ml-2">
-                {stats.all}
-              </Badge>
-            </TabsTrigger>
-            <TabsTrigger className="md:flex-1 min-w-[80px]" value="active">
-              In Progress
-              <Badge variant="outline" className="ml-2">
-                {stats.active}
-              </Badge>
-            </TabsTrigger>
-            <TabsTrigger className="md:flex-1 min-w-[80px]" value="completed">
-              Completed
-              <Badge variant="outline" className="ml-2">
-                {stats.completed}
-              </Badge>
-            </TabsTrigger>
-          </TabsList>
-
-          {/* Pinned Tasks */}
-          <TabsContent value="pinned" className="space-y-2">
-            {filterTasks(sortTasks(tasks), "pinned").length > 0 ? (
-              filterTasks(sortTasks(tasks), "pinned").map((task) => (
-                <TaskItem
-                  key={task.id}
-                  task={task}
-                  onToggle={toggleTaskCompletion}
-                  onDelete={deleteTask}
-                  onChangePriority={changePriority}
-                  onTogglePin={togglePinTask}
-                />
-              ))
-            ) : (
-              <EmptyState message="No pinned tasks" />
-            )}
-          </TabsContent>
-
-          {/* All Tasks */}
-          <TabsContent value="all" className="space-y-2">
-            {filterTasks(sortTasks(tasks), "all").length > 0 ? (
-              filterTasks(sortTasks(tasks), "all").map((task) => (
-                <TaskItem
-                  key={task.id}
-                  task={task}
-                  onToggle={toggleTaskCompletion}
-                  onDelete={deleteTask}
-                  onChangePriority={changePriority}
-                  onTogglePin={togglePinTask}
-                />
-              ))
-            ) : (
-              <EmptyState message="No tasks found" />
-            )}
-          </TabsContent>
-
-          {/* Active Tasks */}
-          <TabsContent value="active" className="space-y-2">
-            {filterTasks(sortTasks(tasks), "active").length > 0 ? (
-              filterTasks(sortTasks(tasks), "active").map((task) => (
-                <TaskItem
-                  key={task.id}
-                  task={task}
-                  onToggle={toggleTaskCompletion}
-                  onDelete={deleteTask}
-                  onChangePriority={changePriority}
-                  onTogglePin={togglePinTask}
-                />
-              ))
-            ) : (
-              <EmptyState message="No active tasks" />
-            )}
-          </TabsContent>
-
-          {/* Completed Tasks */}
-          <TabsContent value="completed" className="space-y-2">
-            {filterTasks(sortTasks(tasks), "completed").length > 0 ? (
-              filterTasks(sortTasks(tasks), "completed").map((task) => (
-                <TaskItem
-                  key={task.id}
-                  task={task}
-                  onToggle={toggleTaskCompletion}
-                  onDelete={deleteTask}
-                  onChangePriority={changePriority}
-                  onTogglePin={togglePinTask}
-                />
-              ))
-            ) : (
-              <EmptyState message="No completed tasks" />
-            )}
-          </TabsContent>
-        </Tabs>
-
-        {/*  Task Input */}
-        <div className="fixed bottom-0 left-0 right-0 p-4 bg-white/80 backdrop-blur-sm border-t border-gray-200 shadow-lg z-10">
-          <div className="flex gap-2 max-w-4xl mx-auto">
-            <Input
-              placeholder="Add a task..."
-              value={newTask}
-              onChange={(e) => setNewTask(e.target.value)}
-              onKeyDown={(e) => {
-                if (e.key === "Enter") addTask();
-              }}
-              className="flex-1"
-            />
-            <Button
-              onClick={addTask}
-              className="bg-[#0f172a] hover:bg-[#1e293b]"
-            >
-              Add
-            </Button>
-          </div>
-        </div>
+              )}
+            </div>
+          )}
+        </section>
       </div>
-    </div>
+    </main>
   );
 }
 
-// Task Item Component
-function TaskItem({
-  task,
-  onToggle,
-  onDelete,
-  onChangePriority,
-  onTogglePin,
+function FilterButton({
+  active,
+  label,
+  count,
+  onClick,
 }: {
-  task: Task;
-  onToggle: (id: string) => void;
+  active: boolean;
+  label: string;
+  count: number;
+  onClick: () => void;
+}) {
+  return (
+    <Button
+      variant={active ? "default" : "outline"}
+      size="sm"
+      className="h-9 shrink-0 gap-2 rounded-full"
+      onClick={onClick}
+    >
+      {label}
+      <Badge
+        variant={active ? "secondary" : "outline"}
+        className="h-5 rounded-full px-1.5"
+      >
+        {count}
+      </Badge>
+    </Button>
+  );
+}
+
+function TodoRow({
+  task,
+  onUpdate,
+  onDelete,
+}: {
+  task: TodoTask;
+  onUpdate: (id: string, updates: Partial<TodoTask>) => void;
   onDelete: (id: string) => void;
-  onChangePriority: (id: string) => void;
-  onTogglePin: (id: string) => void;
 }) {
   return (
     <div
       className={cn(
-        "flex items-start md:items-center justify-between p-3 rounded-lg border transition-all",
-        task.pinned && "border-amber-300 bg-amber-50",
-        task.completed && !task.pinned
-          ? "bg-gray-50 border-gray-100"
-          : !task.pinned && "bg-white border-gray-200 hover:border-gray-300"
+        "group grid grid-cols-[auto_1fr_auto] items-center gap-3 px-4 py-3 transition-colors hover:bg-accent/40",
+        task.completed && "bg-muted/20"
       )}
     >
-      <div
-        className="flex items-start md:items-center gap-3 flex-1"
-        onClick={() => onToggle(task.id)}
-      >
-        <Checkbox
-          checked={task.completed}
-          onCheckedChange={() => onToggle(task.id)}
-          className={cn("mt-1 md:mt-0", task.completed ? "opacity-50" : "")}
-        />
-        <div className="flex-1 cursor-pointer">
+      <Checkbox
+        checked={task.completed}
+        onCheckedChange={(checked) =>
+          onUpdate(task.id, { completed: Boolean(checked) })
+        }
+        aria-label={`Mark ${task.title} as complete`}
+      />
+
+      <div className="min-w-0">
+        <div className="flex min-w-0 items-center gap-2">
+          {task.completed ? (
+            <CheckCircle2 className="h-4 w-4 shrink-0 text-emerald-600" />
+          ) : (
+            <Circle className="h-4 w-4 shrink-0 text-muted-foreground" />
+          )}
           <p
             className={cn(
-              "text-sm font-medium transition-all",
-              task.completed && "line-through text-gray-400"
+              "truncate text-sm font-medium",
+              task.completed && "text-muted-foreground line-through"
             )}
           >
             {task.title}
           </p>
-          <div className="flex flex-wrap items-center gap-2 mt-1">
-            <span
-              className={cn(
-                "text-xs px-2 py-0.5 rounded-full cursor-pointer",
-                priorityColors[task.priority]
-              )}
-              onClick={(e) => {
-                e.stopPropagation();
-                onChangePriority(task.id);
-              }}
-            >
-              {task.priority}
-            </span>
-            <span className="text-xs text-gray-400">
-              {new Date(task.createdAt).toLocaleDateString()}
-            </span>
-          </div>
+        </div>
+        <div className="mt-1 flex items-center gap-2 text-xs text-muted-foreground">
+          <span className={cn("h-2 w-2 rounded-full", priorityDot[task.priority])} />
+          <span>{task.priority}</span>
+          {task.pinned && (
+            <>
+              <span>·</span>
+              <span className="inline-flex items-center gap-1">
+                <Pin className="h-3 w-3" />
+                Pinned
+              </span>
+            </>
+          )}
         </div>
       </div>
+
       <div className="flex items-center gap-1">
         <Button
           variant="ghost"
           size="icon"
-          className={cn(
-            "h-8 w-8",
-            task.pinned
-              ? "text-amber-500"
-              : "text-gray-400 hover:text-amber-500"
-          )}
-          onClick={() => onTogglePin(task.id)}
+          className={cn("h-9 w-9", task.pinned && "text-primary")}
+          onClick={() => onUpdate(task.id, { pinned: !task.pinned })}
           aria-label={task.pinned ? "Unpin task" : "Pin task"}
         >
-          <Star className={cn("h-4 w-4", task.pinned && "fill-amber-500")} />
+          <Star className={cn("h-4 w-4", task.pinned && "fill-current")} />
         </Button>
-        <Button
-          variant="ghost"
-          size="icon"
-          className="h-8 w-8 text-gray-400 hover:text-red-500"
-          onClick={() => onDelete(task.id)}
-          aria-label="Delete task"
-        >
-          <X className="h-4 w-4" />
-        </Button>
+
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button
+              variant="ghost"
+              size="icon"
+              className="h-9 w-9"
+              aria-label="Task options"
+            >
+              <MoreHorizontal className="h-4 w-4" />
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end">
+            <DropdownMenuItem
+              onClick={() =>
+                onUpdate(task.id, { completed: !task.completed })
+              }
+            >
+              <Check className="mr-2 h-4 w-4" />
+              {task.completed ? "Mark open" : "Mark done"}
+            </DropdownMenuItem>
+            <DropdownMenuItem
+              onClick={() => onUpdate(task.id, { priority: "High" })}
+            >
+              High priority
+            </DropdownMenuItem>
+            <DropdownMenuItem
+              onClick={() => onUpdate(task.id, { priority: "Medium" })}
+            >
+              Medium priority
+            </DropdownMenuItem>
+            <DropdownMenuItem
+              onClick={() => onUpdate(task.id, { priority: "Low" })}
+            >
+              Low priority
+            </DropdownMenuItem>
+            <DropdownMenuSeparator />
+            <DropdownMenuItem
+              className="text-destructive"
+              onClick={() => onDelete(task.id)}
+            >
+              <Trash2 className="mr-2 h-4 w-4" />
+              Delete
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
       </div>
     </div>
   );
 }
 
-// Empty State Component
-function EmptyState({ message }: { message: string }) {
+function EmptyState({ hasSearch }: { hasSearch: boolean }) {
   return (
-    <div className="flex flex-col items-center justify-center py-12 text-center">
-      <SunMedium className="h-12 w-12 text-gray-200 mb-4" />
-      <h3 className="text-lg font-medium text-gray-500 mb-1">{message}</h3>
-      <p className="text-sm text-gray-400">Add a new task to get started</p>
+    <div className="flex flex-col items-center justify-center px-6 py-16 text-center">
+      <div className="flex h-12 w-12 items-center justify-center rounded-full bg-muted">
+        <ListTodo className="h-6 w-6 text-muted-foreground" />
+      </div>
+      <h2 className="mt-4 text-base font-semibold">
+        {hasSearch ? "No matching tasks" : "Nothing here"}
+      </h2>
+      <p className="mt-1 max-w-xs text-sm text-muted-foreground">
+        {hasSearch
+          ? "Clear the search or try a different filter."
+          : "Add a task above and keep the list moving."}
+      </p>
     </div>
   );
 }

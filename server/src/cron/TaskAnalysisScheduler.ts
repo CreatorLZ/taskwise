@@ -12,6 +12,14 @@ interface ScheduleConfig {
 export class TaskAnalysisScheduler {
   private schedules: Map<string, cron.ScheduledTask[]> = new Map();
 
+  private async runAnalysisSafely(userId: string): Promise<void> {
+    try {
+      await analyzeAndPrioritizeTasks(userId);
+    } catch (error) {
+      console.error(`Task analysis failed for user ${userId}:`, error);
+    }
+  }
+
   async enableSchedulingForUser(userId: string): Promise<any> {
     // Check if scheduling is already enabled in the database
     const user = await User.findById(userId);
@@ -48,12 +56,12 @@ export class TaskAnalysisScheduler {
     // Create cron schedules
     const schedules = [
       cron.schedule(`${now.getMinutes()} ${now.getHours()} * * *`, () => {
-        analyzeAndPrioritizeTasks(userId);
+        void this.runAnalysisSafely(userId);
       }),
       cron.schedule(
         `${secondRunTime.getMinutes()} ${secondRunTime.getHours()} * * *`,
         () => {
-          analyzeAndPrioritizeTasks(userId);
+          void this.runAnalysisSafely(userId);
         }
       ),
     ];
@@ -62,7 +70,7 @@ export class TaskAnalysisScheduler {
     this.schedules.set(userId, schedules);
 
     // Run initial analysis immediately
-    await analyzeAndPrioritizeTasks(userId);
+    await this.runAnalysisSafely(userId);
 
     return {
       firstRunTime,

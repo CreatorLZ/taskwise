@@ -1,112 +1,214 @@
+import { Types } from "mongoose";
 import Task from "../models/Task";
 import User from "../models/User";
 import geminiService from "../services/geminiService";
+import { AiJsonParseError, parseJsonObject } from "./aiJsonUtils";
 
-function computeUserHabitMetrics(tasks: any[]) {
-  // Calculate metrics for user habits
-  const completedTasks = tasks.filter((t) => t.completed);
+interface TaskInsightInput {
+  title: string;
+  completed: boolean;
+  dueDate: Date;
+  updatedAt?: Date;
+  priority: string;
+  status: string;
+  category?: string;
+}
+
+interface HabitMetrics {
+  completionRate: number;
+  overdueRate: number;
+  streak: number;
+  mostProductiveHour: number | null;
+  totalTasks: number;
+  completedTasks: number;
+  overdueTasks: number;
+  highPriorityOpenTasks: number;
+}
+
+export interface UserInsights {
+  productivityInsight: string;
+  taskOptimization: string;
+  habitSuggestion: string;
+  generatedBy: "ai" | "fallback";
+}
+
+function computeUserHabitMetrics(tasks: TaskInsightInput[]): HabitMetrics {
+  const completedTasks = tasks.filter((task) => task.completed);
   const totalTasks = tasks.length;
-  const completionRate =
-    totalTasks > 0 ? completedTasks.length / totalTasks : 0;
   const overdueTasks = tasks.filter(
-    (t) => !t.completed && new Date(t.dueDate) < new Date()
+    (task) => !task.completed && new Date(task.dueDate) < new Date()
   );
-  const overdueRate = totalTasks > 0 ? overdueTasks.length / totalTasks : 0;
-  const streak = computeCompletionStreak(completedTasks);
-  const mostProductiveHour = getMostProductiveHour(completedTasks);
+  const highPriorityOpenTasks = tasks.filter(
+    (task) => !task.completed && task.priority === "High"
+  ).length;
+
   return {
-    completionRate,
-    overdueRate,
-    streak,
-    mostProductiveHour,
+    completionRate:
+      totalTasks > 0 ? Math.round((completedTasks.length / totalTasks) * 100) : 0,
+    overdueRate:
+      totalTasks > 0 ? Math.round((overdueTasks.length / totalTasks) * 100) : 0,
+    streak: computeCompletionStreak(completedTasks),
+    mostProductiveHour: getMostProductiveHour(completedTasks),
     totalTasks,
     completedTasks: completedTasks.length,
     overdueTasks: overdueTasks.length,
+    highPriorityOpenTasks,
   };
 }
 
-function computeCompletionStreak(completedTasks: any[]) {
-  // Calculate the current streak of days with at least one completed task
-  const dates = completedTasks
-    .map((t) => new Date(t.updatedAt).toDateString())
-    .filter((v, i, a) => a.indexOf(v) === i) // unique days
-    .sort((a, b) => new Date(b).getTime() - new Date(a).getTime());
+function computeCompletionStreak(completedTasks: TaskInsightInput[]): number {
+  const dates = [
+    ...new Set(
+      completedTasks
+        .filter((task) => task.updatedAt)
+        .map((task) => new Date(task.updatedAt as Date).toDateString())
+    ),
+  ].sort((a, b) => new Date(b).getTime() - new Date(a).getTime());
+
   let streak = 0;
-  let current = new Date();
-  for (let i = 0; i < dates.length; i++) {
-    if (new Date(dates[i]).toDateString() === current.toDateString()) {
+  const current = new Date();
+
+  for (const date of dates) {
+    if (new Date(date).toDateString() === current.toDateString()) {
       streak++;
       current.setDate(current.getDate() - 1);
     } else {
       break;
     }
   }
+
   return streak;
 }
 
-function getMostProductiveHour(completedTasks: any[]) {
-  // Find the hour of day with most completed tasks
+function getMostProductiveHour(completedTasks: TaskInsightInput[]) {
+  if (completedTasks.length === 0) return null;
+
   const hours = Array(24).fill(0);
-  completedTasks.forEach((t) => {
-    const hour = new Date(t.updatedAt).getHours();
+  completedTasks.forEach((task) => {
+    if (!task.updatedAt) return;
+    const hour = new Date(task.updatedAt).getHours();
     hours[hour]++;
   });
+
   const max = Math.max(...hours);
-  return hours.findIndex((h) => h === max);
+  if (max === 0) return null;
+
+  return hours.findIndex((hourCount) => hourCount === max);
 }
 
-export async function generateAIPoweredUserInsights(userId: string) {
-  const user = await User.findById(userId);
-  const tasks = await Task.find({ userId });
-  const habitMetrics = computeUserHabitMetrics(tasks);
-  const prompt = `You are Taskwise, an advanced productivity assistant. Analyze the following user's task data and habit metrics, and provide:
-1. A personalized productivity insight based on their habits (e.g., best time of day, completion streak, etc.)
-2. A task optimization suggestion (e.g., how to improve completion, break bad habits, etc.)
-3. A habit-based suggestion (e.g., "Try to complete tasks earlier in the day", "Maintain your current streak!", etc.)
-Return ONLY a JSON object:
+function getFallbackInsights(metrics: HabitMetrics): UserInsights {
+  if (metrics.totalTasks === 0) {
+    return {
+      productivityInsight:
+        "You do not have enough task history yet. Create a few tasks and complete them to unlock better insights.",
+      taskOptimization:
+        "Start with one important task and give it a clear due date.",
+      habitSuggestion:
+        "Use a simple daily review to decide what deserves your attention first.",
+      generatedBy: "fallback",
+    };
+  }
+
+  const productiveHour =
+    metrics.mostProductiveHour === null
+      ? "your most consistent time"
+      : `${String(metrics.mostProductiveHour).padStart(2, "0")}:00`;
+
+  return {
+    productivityInsight: `Your completion rate is ${metrics.completionRate}%, with ${metrics.overdueTasks} overdue task(s).`,
+    taskOptimization:
+      metrics.highPriorityOpenTasks > 3
+        ? "Reduce the number of high-priority open tasks by choosing the top one or two for today."
+        : "Keep priority focused and review due dates before adding more tasks.",
+    habitSuggestion:
+      metrics.streak > 0
+        ? `You have a ${metrics.streak}-day completion streak. Protect it by finishing one small task around ${productiveHour}.`
+        : "Build momentum by completing one small task today before starting a larger one.",
+    generatedBy: "fallback",
+  };
+}
+
+function validateInsights(value: Partial<UserInsights>): UserInsights | null {
+  if (
+    typeof value.productivityInsight !== "string" ||
+    typeof value.taskOptimization !== "string" ||
+    typeof value.habitSuggestion !== "string"
+  ) {
+    return null;
+  }
+
+  return {
+    productivityInsight: value.productivityInsight,
+    taskOptimization: value.taskOptimization,
+    habitSuggestion: value.habitSuggestion,
+    generatedBy: "ai",
+  };
+}
+
+export async function generateAIPoweredUserInsights(
+  userId: string
+): Promise<UserInsights> {
+  const user = await User.findById(userId).select("username");
+
+  const tasks = await Task.find({ userId: new Types.ObjectId(userId) })
+    .sort({ updatedAt: -1 })
+    .limit(100)
+    .select("title completed dueDate updatedAt priority status category");
+
+  const insightTasks = tasks.map((task) => ({
+    title: task.title,
+    completed: task.completed,
+    dueDate: task.dueDate,
+    updatedAt: task.updatedAt,
+    priority: task.priority,
+    status: task.status,
+    category: task.category,
+  }));
+  const habitMetrics = computeUserHabitMetrics(insightTasks);
+  const fallbackInsights = getFallbackInsights(habitMetrics);
+
+  const prompt = `Return a JSON object only. No markdown. No prose.
+
+Generate concise productivity insights from this user's task metrics.
+
+Required shape:
 {
-  "productivityInsight": "...",
-  "taskOptimization": "...",
-  "habitSuggestion": "..."
+  "productivityInsight": "one sentence grounded in the metrics",
+  "taskOptimization": "one specific task-management suggestion",
+  "habitSuggestion": "one habit suggestion the user can apply today"
 }
+
 User: ${user?.username || "User"}
-Metrics: ${JSON.stringify(habitMetrics, null, 2)}
-Tasks: ${JSON.stringify(
-    tasks.map((t) => ({
-      title: t.title,
-      completed: t.completed,
-      dueDate: t.dueDate,
-      updatedAt: t.updatedAt,
-      priority: t.priority,
-      status: t.status,
-    })),
-    null,
-    2
-  )}
-`;
+Metrics: ${JSON.stringify(habitMetrics)}
+Recent tasks: ${JSON.stringify(insightTasks.slice(0, 10))}`;
 
-  const response = await geminiService.generateContent(prompt, {
-    maxOutputTokens: 1000,
-    temperature: 0.7,
-    topP: 0.95,
-    // @ts-ignore
-    responseMimeType: "application/json",
-  });
-
-  const output = response;
-  // Clean output to remove Markdown code blocks
-  let cleanedOutput = output
-    .replace(/```json\s*/g, "")
-    .replace(/```\s*/g, "")
-    .trim();
   try {
-    return JSON.parse(cleanedOutput);
-  } catch {
-    const jsonStart = cleanedOutput.indexOf("{");
-    const jsonEnd = cleanedOutput.lastIndexOf("}");
-    if (jsonStart >= 0 && jsonEnd >= 0) {
-      return JSON.parse(cleanedOutput.substring(jsonStart, jsonEnd + 1));
+    const response = await geminiService.generateContent(
+      prompt,
+      {
+        maxOutputTokens: 2048,
+        temperature: 0,
+        topP: 0.9,
+        responseMimeType: "application/json",
+        thinkingLevel: "low",
+      },
+      12000
+    );
+
+    const parsed = parseJsonObject<Partial<UserInsights>>(response);
+    return validateInsights(parsed) || fallbackInsights;
+  } catch (error: any) {
+    if (error instanceof AiJsonParseError) {
+      console.warn("[AI insights] Invalid JSON response from Gemini", {
+        message: error.message,
+        responsePreview: error.responsePreview,
+      });
     }
-    throw new Error("Failed to parse Gemini insight response");
+
+    console.warn(
+      "AI insights failed. Falling back to deterministic insights:",
+      error.message
+    );
+    return fallbackInsights;
   }
 }

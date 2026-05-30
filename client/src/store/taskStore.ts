@@ -2,6 +2,7 @@ import { create } from "zustand";
 import { persist } from "zustand/middleware";
 import api from "@/utils/api";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import useAuthStore from "./authstore";
 
 export interface Task {
   _id: string;
@@ -66,6 +67,7 @@ export function useFetchTasks(userId: string) {
       // console.log(response.data);
       return response.data;
     },
+    enabled: Boolean(userId),
     staleTime: 5000,
     gcTime: 10 * 60 * 1000,
   });
@@ -232,12 +234,15 @@ export function useTaskAnalysisSchedulingMutation() {
 }
 
 export function useProductivityInsights() {
+  const token = useAuthStore((state) => state.token);
+
   return useQuery({
     queryKey: ["insights"],
     queryFn: async () => {
       const response = await api.get("/insights");
       return response.data;
     },
+    enabled: Boolean(token),
     staleTime: 5 * 60 * 1000,
   });
 }

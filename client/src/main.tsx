@@ -6,16 +6,19 @@ import { createBrowserRouter, RouterProvider } from "react-router-dom";
 import TaskDashboard from "./Pages/Dashboard.tsx";
 import RegisterPage from "./Pages/Register.tsx";
 import LoginPage from "./Pages/Login.tsx";
+import PasswordResetPage from "./Pages/PasswordReset.tsx";
+import VerifyEmailPage from "./Pages/VerifyEmail.tsx";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 // import { ReactQueryDevtools } from "@tanstack/react-query-devtools";
 import ProtectedRoute from "./ProtectedRoute.tsx";
 import { DashboardLayout } from "./components/dashboardLayout.tsx";
 import PublicRoute from "./PublicRoute.tsx";
-import { Toaster } from "sonner";
+import { Toaster } from "@/components/ui/sonner";
 import { HelmetProvider } from "react-helmet-async";
 import { Analytics } from "@vercel/analytics/react";
 import { GoogleOAuthProvider } from "@react-oauth/google";
 import TodoList from "./Pages/TodoList.tsx";
+import { ThemeProvider } from "@/components/theme-provider";
 
 // NOTE: Firebase messaging is now lazy-loaded in NotificationPrompt.tsx
 // This prevents Chrome's "Local Network Access" prompt from appearing on page load
@@ -65,6 +68,18 @@ const router = createBrowserRouter([
       </PublicRoute>
     ),
   },
+  {
+    path: "/reset-password",
+    element: (
+      <PublicRoute>
+        <PasswordResetPage />
+      </PublicRoute>
+    ),
+  },
+  {
+    path: "/verify-email",
+    element: <VerifyEmailPage />,
+  },
 ]);
 
 const queryClient = new QueryClient();
@@ -72,14 +87,16 @@ const queryClient = new QueryClient();
 createRoot(document.getElementById("root")!).render(
   <StrictMode>
     <GoogleOAuthProvider clientId={import.meta.env.VITE_GOOGLE_CLIENT_ID}>
-      <HelmetProvider>
-        <QueryClientProvider client={queryClient}>
-          <RouterProvider router={router} />
-          <Toaster />
-          <Analytics />
-          {/* <ReactQueryDevtools initialIsOpen={false} /> */}
-        </QueryClientProvider>
-      </HelmetProvider>
+      <ThemeProvider>
+        <HelmetProvider>
+          <QueryClientProvider client={queryClient}>
+            <RouterProvider router={router} />
+            <Toaster />
+            <Analytics />
+            {/* <ReactQueryDevtools initialIsOpen={false} /> */}
+          </QueryClientProvider>
+        </HelmetProvider>
+      </ThemeProvider>
     </GoogleOAuthProvider>
   </StrictMode>
 );

@@ -27,18 +27,31 @@ import { CalendarIcon, Loader2, Sparkles, Plus } from "lucide-react";
 import { format } from "date-fns";
 import { cn } from "@/lib/utils";
 import { Calendar } from "@/components/ui/calendar";
+import { AxiosError } from "axios";
 
 interface NewTaskModalProps {
   trigger?: React.ReactNode;
 }
 
+const getApiErrorMessage = (
+  error: unknown,
+  fallbackMessage: string
+): string => {
+  if (error instanceof AxiosError) {
+    const data = error.response?.data as { message?: string } | undefined;
+    return data?.message || fallbackMessage;
+  }
+
+  return fallbackMessage;
+};
+
 export function NewTaskModal({ trigger }: NewTaskModalProps) {
   const [open, setOpen] = useState(false);
-  const [isNlpMode, setIsNlpMode] = useState(true);
+  const [isNlpMode, setIsNlpMode] = useState(false);
   const [nlpInput, setNlpInput] = useState("");
   const [taskName, setTaskName] = useState("");
   const [description, setDescription] = useState("");
-  const [priority, setPriority] = useState<string>("");
+  const [priority, setPriority] = useState<string>("Medium");
   const [date, setDate] = useState<Date | undefined>(undefined);
   const [time, setTime] = useState<string>("23:59");
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
@@ -58,11 +71,13 @@ export function NewTaskModal({ trigger }: NewTaskModalProps) {
         setNlpInput("");
         setOpen(false);
       },
-      onError: (error: any) => {
-        const errorResponse =
-          error?.response?.data?.message ||
-          "Failed to create task using AI. Please try again.";
-        setErrorMessage(errorResponse);
+      onError: (error: unknown) => {
+        setErrorMessage(
+          getApiErrorMessage(
+            error,
+            "Failed to create task using AI. Please try again."
+          )
+        );
       },
     });
   };
@@ -97,21 +112,20 @@ export function NewTaskModal({ trigger }: NewTaskModalProps) {
             // Reset the inputs and close the dialog
             setTaskName("");
             setDescription("");
-            setPriority("");
+            setPriority("Medium");
             setDate(undefined);
-            setTime("11:59");
+            setTime("23:59");
             setOpen(false);
             setErrorMessage(null);
           },
-          onError: (error: any) => {
-            const errorResponse =
-              error?.response?.data?.message ||
-              "Failed to create task. Please try again.";
-            setErrorMessage(errorResponse);
+          onError: (error: unknown) => {
+            setErrorMessage(
+              getApiErrorMessage(error, "Failed to create task. Please try again.")
+            );
           },
         }
       );
-    } catch (error) {
+    } catch {
       setErrorMessage("Invalid date or time selected.");
     }
   };

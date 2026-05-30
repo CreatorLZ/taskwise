@@ -15,11 +15,34 @@ interface GenAIConfig {
   maxOutputTokens?: number;
   temperature?: number;
   topP?: number;
+  responseMimeType?: string;
+  thinkingBudget?: number;
+  thinkingLevel?: "low" | "medium" | "high";
+}
+
+interface GeminiDiagnostics {
+  requestId: string;
+  model: string;
+  durationMs: number;
+  finishReason?: string;
+  blockReason?: string;
+  safetyRatings?: unknown;
+}
+
+export class GeminiServiceError extends Error {
+  diagnostics?: GeminiDiagnostics;
+
+  constructor(message: string, diagnostics?: GeminiDiagnostics) {
+    super(message);
+    this.name = "GeminiServiceError";
+    this.diagnostics = diagnostics;
+  }
 }
 
 class GeminiService {
   private genai: GoogleGenerativeAI;
   private model: GenerativeModel;
+  private modelName: string;
   private cache: Map<string, CacheEntry>;
   private cacheTTL: number = 3600000;
   private maxCacheSize: number = 1000; // Prevent memory leaks
@@ -31,12 +54,9 @@ class GeminiService {
     const apiKey = process.env.GEMINI_API_KEY;
     if (!apiKey) throw new Error("GEMINI_API_KEY is not set");
 
+    this.modelName = process.env.GEMINI_MODEL || "gemini-3.5-flash";
     this.genai = new GoogleGenerativeAI(apiKey);
-    // Fixed model name (Verify version currently available to you)
-    // Updated to verified existing model ID
-    this.model = this.genai.getGenerativeModel({
-      model: "gemini-3-flash-preview",
-    });
+    this.model = this.genai.getGenerativeModel({ model: this.modelName });
     this.cache = new Map();
     this.rateLimit = { count: 0, resetTime: Date.now() + this.rateLimitWindow };
   }
@@ -60,18 +80,35 @@ class GeminiService {
     // 3. Setup AbortController for true cancellation
     const controller = new AbortController();
     const timeoutId = setTimeout(() => controller.abort(), timeout);
+    const requestId = crypto.randomUUID();
+    const startedAt = Date.now();
 
     try {
-      console.log("Making Gemini API request...");
+      console.log(
+        `[Gemini] request ${requestId} started model=${this.modelName}`
+      );
+
+      const generationConfig: Record<string, unknown> = {
+        maxOutputTokens: config.maxOutputTokens || 500,
+        temperature: config.temperature ?? 0.3,
+        topP: config.topP || 0.95,
+        responseMimeType: config.responseMimeType,
+      };
+
+      if (typeof config.thinkingLevel === "string") {
+        generationConfig.thinkingConfig = {
+          thinkingLevel: config.thinkingLevel,
+        };
+      } else if (typeof config.thinkingBudget === "number") {
+        generationConfig.thinkingConfig = {
+          thinkingBudget: config.thinkingBudget,
+        };
+      }
 
       const result = await this.model.generateContent(
         {
           contents: [{ role: "user", parts: [{ text: prompt }] }],
-          generationConfig: {
-            maxOutputTokens: config.maxOutputTokens || 500,
-            temperature: config.temperature ?? 0.3, // Use ?? to allow 0
-            topP: config.topP || 0.95,
-          },
+          generationConfig,
         },
         // Pass the request options (supported in newer SDK versions)
         // Note: If your SDK version doesn't support requestOptions,
@@ -82,26 +119,72 @@ class GeminiService {
       );
 
       clearTimeout(timeoutId);
+      const durationMs = Date.now() - startedAt;
 
       // 4. Handle Safety Blocks
       const response = result.response;
+      const firstCandidate = response.candidates?.[0];
+      const diagnostics: GeminiDiagnostics = {
+        requestId,
+        model: this.modelName,
+        durationMs,
+        finishReason: firstCandidate?.finishReason,
+        safetyRatings: firstCandidate?.safetyRatings,
+      };
+
       if (!response.candidates || response.candidates.length === 0) {
-        throw new Error("No candidates returned. Possible safety block.");
+        const blockReason = response.promptFeedback?.blockReason;
+        this.logGeminiFailure("No candidates returned", {
+          ...diagnostics,
+          blockReason,
+        });
+        throw new GeminiServiceError(
+          blockReason
+            ? `No candidates returned. Prompt blocked: ${blockReason}`
+            : "No candidates returned. Possible safety block.",
+          { ...diagnostics, blockReason }
+        );
       }
 
       const text = response.text();
+      console.log(
+        `[Gemini] request ${requestId} completed durationMs=${durationMs} finishReason=${
+          firstCandidate?.finishReason || "unknown"
+        } textLength=${text.length}`
+      );
 
       this.setCache(cacheKey, text);
       return text;
     } catch (error: any) {
       clearTimeout(timeoutId);
+      const durationMs = Date.now() - startedAt;
 
       if (error.name === "AbortError" || error.message?.includes("aborted")) {
-        throw new Error(`Gemini API request timed out after ${timeout}ms`);
+        const timeoutError = new GeminiServiceError(
+          `Gemini API request timed out after ${timeout}ms`,
+          {
+            requestId,
+            model: this.modelName,
+            durationMs,
+          }
+        );
+        this.logGeminiFailure(timeoutError.message, timeoutError.diagnostics);
+        throw timeoutError;
       }
 
-      console.error("Gemini API error:", error);
-      throw error; // Re-throw to let caller handle
+      if (error instanceof GeminiServiceError) {
+        throw error;
+      }
+
+      const message =
+        error?.message || error?.statusText || "Unknown Gemini API error";
+      const serviceError = new GeminiServiceError(message, {
+        requestId,
+        model: this.modelName,
+        durationMs,
+      });
+      this.logGeminiFailure(message, serviceError.diagnostics, error);
+      throw serviceError;
     }
   }
 
@@ -146,6 +229,28 @@ class GeminiService {
 
   private incrementRateLimit(): void {
     this.rateLimit.count++;
+  }
+
+  private logGeminiFailure(
+    message: string,
+    diagnostics?: GeminiDiagnostics,
+    rawError?: unknown
+  ): void {
+    console.error("[Gemini] request failed", {
+      message,
+      diagnostics,
+      rawError:
+        rawError instanceof Error
+          ? {
+              name: rawError.name,
+              message: rawError.message,
+              stack:
+                process.env.NODE_ENV === "development"
+                  ? rawError.stack
+                  : undefined,
+            }
+          : rawError,
+    });
   }
 }
 

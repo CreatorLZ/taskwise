@@ -51,6 +51,17 @@ import {
 } from "@/components/ui/sheet";
 import api from "@/utils/api";
 import { useQueryClient } from "@tanstack/react-query";
+import { ThemeToggle } from "./theme-toggle";
+import type { LucideIcon } from "lucide-react";
+
+type NavigationItem = {
+  name: string;
+  icon: LucideIcon;
+  path: string;
+  disabled?: boolean;
+  handleClick?: () => void;
+  tooltip: string;
+};
 
 export function DashboardSidebar() {
   const location = useLocation();
@@ -168,7 +179,7 @@ export function DashboardSidebar() {
     ],
   };
 
-  const renderMenuButton = (item: any) => {
+  const renderMenuButton = (item: NavigationItem) => {
     if (item.handleClick) {
       return (
         <div
@@ -236,17 +247,20 @@ export function DashboardSidebar() {
             <SidebarHeader className="mt-16">
               <SidebarMenu>
                 <SidebarMenuItem>
-                  <SidebarMenuButton size="lg">
-                    <div className="flex aspect-square size-8 items-center justify-center rounded-lg bg-primary text-primary-foreground">
-                      <Brain className="size-4" />
+                  <div className="flex items-center gap-2 px-2 py-2">
+                    <div className="flex min-w-0 flex-1 items-center gap-2">
+                      <div className="flex aspect-square size-8 items-center justify-center rounded-lg bg-primary text-primary-foreground">
+                        <Brain className="size-4" />
+                      </div>
+                      <div className="flex min-w-0 flex-col gap-0.5 leading-none">
+                        <span className="truncate font-semibold">TaskWise</span>
+                        <span className="truncate text-xs text-muted-foreground">
+                          AI-Powered Tasks
+                        </span>
+                      </div>
                     </div>
-                    <div className="flex flex-col gap-0.5 leading-none">
-                      <span className="font-semibold">TaskWise</span>
-                      <span className="text-xs text-muted-foreground">
-                        AI-Powered Tasks
-                      </span>
-                    </div>
-                  </SidebarMenuButton>
+                    <ThemeToggle />
+                  </div>
                 </SidebarMenuItem>
               </SidebarMenu>
             </SidebarHeader>
@@ -353,17 +367,25 @@ export function DashboardSidebar() {
           <SidebarHeader>
             <SidebarMenu>
               <SidebarMenuItem>
-                <SidebarMenuButton size="lg">
-                  <div className="flex aspect-square size-8 items-center justify-center rounded-lg bg-primary text-primary-foreground">
+                <div className="flex items-center gap-2 px-2 py-2 group-data-[collapsible=icon]:justify-center">
+                  <div className="flex min-w-0 flex-1 items-center gap-2 group-data-[collapsible=icon]:hidden">
+                    <div className="flex aspect-square size-8 items-center justify-center rounded-lg bg-primary text-primary-foreground">
+                      <Brain className="size-4" />
+                    </div>
+                    <div className="flex min-w-0 flex-col gap-0.5 leading-none">
+                      <span className="truncate font-semibold">TaskWise</span>
+                      <span className="truncate text-xs text-muted-foreground">
+                        AI-Powered Tasks
+                      </span>
+                    </div>
+                  </div>
+                  <div className="ml-auto group-data-[collapsible=icon]:hidden">
+                    <ThemeToggle />
+                  </div>
+                  <div className="hidden aspect-square size-8 items-center justify-center rounded-lg bg-primary text-primary-foreground group-data-[collapsible=icon]:flex">
                     <Brain className="size-4" />
                   </div>
-                  <div className="flex flex-col gap-0.5 leading-none">
-                    <span className="font-semibold">TaskWise</span>
-                    <span className="text-xs text-muted-foreground">
-                      AI-Powered Tasks
-                    </span>
-                  </div>
-                </SidebarMenuButton>
+                </div>
               </SidebarMenuItem>
             </SidebarMenu>
           </SidebarHeader>

@@ -11,17 +11,25 @@ const api = axios.create({
   baseURL,
 });
 
+const AUTH_ROUTES = [
+  "/auth/login",
+  "/auth/register",
+  "/auth/googlelogin",
+  "/auth/forgot-password",
+  "/auth/reset-password",
+  "/auth/verify-email",
+  "/auth/resend-verification",
+];
+
+const isAuthRoute = (url?: string) =>
+  !!url && AUTH_ROUTES.some((route) => url.includes(route));
+
+let hasRedirectedForExpiredSession = false;
+
 api.interceptors.request.use((config) => {
   const token = useAuthStore.getState().token;
-  // console.log(
-  //   "Request interceptor: token present?",
-  //   !!token,
-  //   "URL:",
-  //   config.url
-  // );
   if (token) {
     config.headers.Authorization = `Bearer ${token}`;
-    // console.log("Authorization header set");
   }
   return config;
 });
@@ -30,34 +38,36 @@ api.interceptors.request.use((config) => {
 api.interceptors.response.use(
   (response) => response,
   (error) => {
-    console.log("Response interceptor error:", {
-      status: error.response?.status,
-      message: error.response?.data?.message,
-      url: error.config?.url,
-    });
-    if (error.response && error.response.status === 401) {
-      console.log("Token expiration detected, clearing auth state");
-      // Clear auth state and redirect to login
-      const logout = useAuthStore.getState().logout;
-      logout();
+    const status = error.response?.status;
+    const message = error.response?.data?.message;
+    const requestUrl = error.config?.url;
+    const hadAuthHeader = Boolean(error.config?.headers?.Authorization);
+    const shouldEndSession =
+      status === 401 &&
+      hadAuthHeader &&
+      !isAuthRoute(requestUrl) &&
+      ["Token is not valid", "User not found", "No token, authorization denied"].includes(
+        message
+      );
 
-      // Show notification (using toast instead of alert)
+    if (shouldEndSession && !hasRedirectedForExpiredSession) {
+      hasRedirectedForExpiredSession = true;
+      useAuthStore.getState().logout();
+
       if (typeof window !== "undefined") {
-        toast.dismiss(); // Dismiss existing toasts
+        toast.dismiss();
         toast.error("Session expired. Please log in again.", {
           duration: 4000,
           position: "top-center",
         });
 
-        // Use sessionStorage to persist the message across redirect if needed
         sessionStorage.setItem("sessionExpired", "true");
-
-        // Redirect to login
-        // setTimeout to allow toast to render? standard redirect wipes it.
-        // The storage item "sessionExpired" is the best way, handled in Login page.
-        window.location.href = "/login";
+        if (window.location.pathname !== "/login") {
+          window.location.assign("/login");
+        }
       }
     }
+
     return Promise.reject(error);
   }
 );

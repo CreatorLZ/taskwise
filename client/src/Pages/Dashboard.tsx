@@ -128,11 +128,12 @@ export default function TaskDashboard() {
   const schedulingMutation = useTaskAnalysisSchedulingMutation();
 
   // Fetch tasks using React Query
-  const { isLoading, error } = useFetchTasks(userId!);
+  const { isLoading, error } = useFetchTasks(userId || "");
   const { data: insights, isLoading: insightsLoading } =
     useProductivityInsights();
 
-  const tasks = useTaskStore((state) => state.tasks) ?? [];
+  const storedTasks = useTaskStore((state) => state.tasks);
+  const tasks = useMemo(() => storedTasks ?? [], [storedTasks]);
 
   // console.log(user);
   // console.log(tasks);
@@ -208,12 +209,13 @@ export default function TaskDashboard() {
             return (
               new Date(a.dueDate).getTime() - new Date(b.dueDate).getTime()
             );
-          case "priority":
+          case "priority": {
             const priorityOrder = { High: 3, Medium: 2, Low: 1 };
             return (
               (priorityOrder[b.priority as keyof typeof priorityOrder] || 0) -
               (priorityOrder[a.priority as keyof typeof priorityOrder] || 0)
             );
+          }
           case "title":
             return a.title.localeCompare(b.title);
           default:

@@ -7,6 +7,7 @@ import useAuthStore from "@/store/authstore";
 import { useNavigate } from "react-router-dom";
 import { useQueryClient } from "@tanstack/react-query";
 import useTaskStore from "@/store/taskStore";
+import { AxiosError } from "axios";
 
 interface GoogleSignInButtonProps {
   className?: string;
@@ -22,9 +23,7 @@ const GoogleSignInButton = ({
   const queryClient = useQueryClient();
 
   // Zustand store actions
-  const setUser = useAuthStore((state) => state.setUser);
-  const setUserId = useAuthStore((state) => state.setUserId);
-  const setToken = useAuthStore((state) => state.setToken);
+  const setAuth = useAuthStore((state) => state.setAuth);
   const setTasks = useTaskStore((state) => state.setTasks);
   const setAIEnabled = useTaskStore((state) => state.setAIEnabled);
 
@@ -55,32 +54,36 @@ const GoogleSignInButton = ({
 
         const { token, user, userId } = authResponse.data;
 
-        // Update auth store
-        setUser(user);
-        setToken(token);
-        setUserId(userId);
-        setAIEnabled(user.taskAnalysisSchedule.enabled);
+        setAuth({ user, token, userId });
+        setAIEnabled(Boolean(user.taskAnalysisSchedule?.enabled));
 
         // Note: Notification permission is now requested via NotificationPrompt component on dashboard
 
         const clearTasks = useTaskStore.getState().clearTasks;
         clearTasks();
 
-        // Prefetch tasks after successful login
-        await queryClient.prefetchQuery({
-          queryKey: ["tasks", userId],
-          queryFn: async () => {
-            const response = await api.get(`/tasks/user/${userId}`);
-            setTasks(response.data);
-            return response.data;
-          },
-        });
+        queryClient
+          .prefetchQuery({
+            queryKey: ["tasks", userId],
+            queryFn: async () => {
+              const response = await api.get(`/tasks/user/${userId}`);
+              setTasks(Array.isArray(response.data) ? response.data : []);
+              return response.data;
+            },
+          })
+          .catch((error) => {
+            console.warn("Task prefetch failed after Google login:", error);
+          });
 
         // Navigate to dashboard
         navigate("/dashboard");
-      } catch (error: any) {
+      } catch (error: unknown) {
         console.error("Google authentication error:", error);
-        onError?.(error.response?.data?.message || "Authentication failed");
+        onError?.(
+          error instanceof AxiosError
+            ? error.response?.data?.message || "Authentication failed"
+            : "Authentication failed"
+        );
       } finally {
         setIsLoading(false);
       }
