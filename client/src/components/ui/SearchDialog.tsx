@@ -7,7 +7,7 @@ import {
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
-import { Search, Calendar, Tag, Clock } from "lucide-react";
+import { Search, Calendar, Clock } from "lucide-react";
 import useTaskStore, { Task } from "@/store/taskStore";
 import { format } from "date-fns";
 

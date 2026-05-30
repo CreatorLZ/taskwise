@@ -181,10 +181,16 @@ export function DashboardSidebar() {
 
   const renderMenuButton = (item: NavigationItem) => {
     if (item.handleClick) {
+      const handleClick = item.handleClick;
+
       return (
         <div
           className="flex w-full items-center gap-2 disabled:opacity-15"
-          onClick={() => !item.disabled && item.handleClick()}
+          onClick={() => {
+            if (!item.disabled) {
+              handleClick();
+            }
+          }}
           role="button"
           tabIndex={item.disabled ? -1 : 0}
         >

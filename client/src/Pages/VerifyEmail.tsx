@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { useNavigate, useSearchParams, Link } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -8,7 +8,7 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { Brain, Loader2, CheckCircle, XCircle, Mail } from "lucide-react";
+import { Loader2, CheckCircle, XCircle, Mail } from "lucide-react";
 import api from "@/utils/api";
 
 type VerificationState = "verifying" | "success" | "error" | "already-verified";

@@ -1,12 +1,5 @@
-import { useState, useEffect, useCallback, useRef } from "react";
+import { useState, useEffect, useRef } from "react";
 import { Button } from "@/components/ui/button";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
 import {
   Dialog,
   DialogContent,
@@ -30,7 +23,6 @@ const BREAK_DURATION = 5 * 60; // 5 minutes in seconds
 const LONG_BREAK_DURATION = 15 * 60; // 15 minutes in seconds
 
 export function PomodoroTimer({
-  taskId,
   taskTitle,
   onSessionComplete,
 }: PomodoroTimerProps) {
