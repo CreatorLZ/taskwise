@@ -37,8 +37,13 @@ Tasks: ${JSON.stringify(tasks, null, 2)}`;
         });
         // Extract JSON from response
         const output = response;
+        // Clean output to remove Markdown code blocks
+        let cleanedOutput = output
+            .replace(/```json\s*/g, "")
+            .replace(/```\s*/g, "")
+            .trim();
         try {
-            const jsonMatch = output.match(/\{[\s\S]*\}/);
+            const jsonMatch = cleanedOutput.match(/\{[\s\S]*\}/);
             if (jsonMatch) {
                 return JSON.parse(jsonMatch[0]);
             }

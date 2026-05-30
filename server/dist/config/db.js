@@ -18,12 +18,17 @@ dotenv_1.default.config();
 const connectDB = () => __awaiter(void 0, void 0, void 0, function* () {
     try {
         const uri = process.env.MONGODB_URI;
-        yield mongoose_1.default.connect(uri);
+        if (!uri) {
+            throw new Error("MONGODB_URI is not set");
+        }
+        yield mongoose_1.default.connect(uri, {
+            serverSelectionTimeoutMS: 10000,
+        });
         console.log("MongoDB connected successfully");
     }
     catch (error) {
         console.error("MongoDB connection error:", error);
-        process.exit(1); // Exit process with failure
+        throw error;
     }
 });
 exports.default = connectDB;

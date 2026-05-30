@@ -20,6 +20,16 @@ class TaskAnalysisScheduler {
     constructor() {
         this.schedules = new Map();
     }
+    runAnalysisSafely(userId) {
+        return __awaiter(this, void 0, void 0, function* () {
+            try {
+                yield (0, analyzeAndPrioritizeTasks_1.analyzeAndPrioritizeTasks)(userId);
+            }
+            catch (error) {
+                console.error(`Task analysis failed for user ${userId}:`, error);
+            }
+        });
+    }
     enableSchedulingForUser(userId) {
         return __awaiter(this, void 0, void 0, function* () {
             var _a;
@@ -49,16 +59,16 @@ class TaskAnalysisScheduler {
             // Create cron schedules
             const schedules = [
                 node_cron_1.default.schedule(`${now.getMinutes()} ${now.getHours()} * * *`, () => {
-                    (0, analyzeAndPrioritizeTasks_1.analyzeAndPrioritizeTasks)(userId);
+                    void this.runAnalysisSafely(userId);
                 }),
                 node_cron_1.default.schedule(`${secondRunTime.getMinutes()} ${secondRunTime.getHours()} * * *`, () => {
-                    (0, analyzeAndPrioritizeTasks_1.analyzeAndPrioritizeTasks)(userId);
+                    void this.runAnalysisSafely(userId);
                 }),
             ];
             // Store schedules in memory
             this.schedules.set(userId, schedules);
             // Run initial analysis immediately
-            yield (0, analyzeAndPrioritizeTasks_1.analyzeAndPrioritizeTasks)(userId);
+            yield this.runAnalysisSafely(userId);
             return {
                 firstRunTime,
                 secondRunTime: secondRunTimeStr,

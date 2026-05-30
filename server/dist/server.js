@@ -1,4 +1,27 @@
 "use strict";
+var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    var desc = Object.getOwnPropertyDescriptor(m, k);
+    if (!desc || ("get" in desc ? !m.__esModule : desc.writable || desc.configurable)) {
+      desc = { enumerable: true, get: function() { return m[k]; } };
+    }
+    Object.defineProperty(o, k2, desc);
+}) : (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    o[k2] = m[k];
+}));
+var __setModuleDefault = (this && this.__setModuleDefault) || (Object.create ? (function(o, v) {
+    Object.defineProperty(o, "default", { enumerable: true, value: v });
+}) : function(o, v) {
+    o["default"] = v;
+});
+var __importStar = (this && this.__importStar) || function (mod) {
+    if (mod && mod.__esModule) return mod;
+    var result = {};
+    if (mod != null) for (var k in mod) if (k !== "default" && Object.prototype.hasOwnProperty.call(mod, k)) __createBinding(result, mod, k);
+    __setModuleDefault(result, mod);
+    return result;
+};
 var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, generator) {
     function adopt(value) { return value instanceof P ? value : new P(function (resolve) { resolve(value); }); }
     return new (P || (P = Promise))(function (resolve, reject) {
@@ -12,9 +35,11 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
+exports.server = void 0;
+require("dotenv/config");
 const express_1 = __importDefault(require("express"));
 const cors_1 = __importDefault(require("cors"));
-const dotenv_1 = require("dotenv");
+const helmet_1 = __importDefault(require("helmet"));
 const taskRoutes_1 = __importDefault(require("./routes/taskRoutes"));
 const authRoutes_1 = __importDefault(require("./routes/authRoutes"));
 const googleAuthRoutes_1 = __importDefault(require("./routes/googleAuthRoutes"));
@@ -24,20 +49,37 @@ const taskAnalysis_1 = __importDefault(require("./routes/taskAnalysis"));
 const insights_1 = __importDefault(require("./routes/insights"));
 const db_1 = __importDefault(require("./config/db"));
 const userRoutes_1 = __importDefault(require("./routes/userRoutes"));
-require("./cron/reminderCron");
 const TaskAnalysisScheduler_1 = require("./cron/TaskAnalysisScheduler");
-// Load environment variables
-(0, dotenv_1.config)();
-// Connect to MongoDB
-(0, db_1.default)();
+const rateLimiter_1 = require("./middleware/rateLimiter");
 const app = (0, express_1.default)();
-const port = process.env.PORT;
-// Middleware to parse JSON
-app.use(express_1.default.json());
+const port = Number(process.env.PORT) || 5000;
+// Security: Helmet for security headers
+app.use((0, helmet_1.default)({
+    crossOriginEmbedderPolicy: false, // Allow embedding for OAuth popups
+    contentSecurityPolicy: {
+        directives: {
+            defaultSrc: ["'self'"],
+            scriptSrc: ["'self'", "'unsafe-inline'", "https://accounts.google.com"],
+            styleSrc: ["'self'", "'unsafe-inline'", "https://fonts.googleapis.com"],
+            fontSrc: ["'self'", "https://fonts.gstatic.com"],
+            imgSrc: ["'self'", "data:", "https:"],
+            connectSrc: [
+                "'self'",
+                "https://generativelanguage.googleapis.com",
+                "https://fcm.googleapis.com",
+            ],
+        },
+    },
+}));
+// Apply general rate limiter to all routes
+app.use(rateLimiter_1.generalLimiter);
+// Middleware to parse JSON with size limit
+app.use(express_1.default.json({ limit: "10kb" }));
+app.use(express_1.default.urlencoded({ extended: true, limit: "10kb" }));
 // Enable CORS
 app.use((0, cors_1.default)({
     origin: ["http://localhost:5173", "https://taskwise-three.vercel.app"],
-    methods: ["GET", "POST", "PUT", "DELETE", "PATCH"], // Allowed HTTP methods
+    methods: ["GET", "POST", "PUT", "DELETE", "PATCH"],
     credentials: true,
 }));
 // Set COOP and CORP headers
@@ -63,11 +105,20 @@ app.get("/health", (req, res) => {
     res.status(200).send("Server is running");
 });
 // Start the server
-app.listen(port, () => {
+const server = app.listen(port, "0.0.0.0", () => {
     console.log(`Server is running on port ${port}`);
 });
-const startTaskShedulesServer = () => __awaiter(void 0, void 0, void 0, function* () {
-    yield TaskAnalysisScheduler_1.taskAnalysisScheduler.restoreSchedules();
+exports.server = server;
+const startBackgroundServices = () => __awaiter(void 0, void 0, void 0, function* () {
+    try {
+        yield (0, db_1.default)();
+        yield Promise.resolve().then(() => __importStar(require("./cron/reminderCron")));
+        yield Promise.resolve().then(() => __importStar(require("./cron/RecurrenceCron")));
+        yield TaskAnalysisScheduler_1.taskAnalysisScheduler.restoreSchedules();
+    }
+    catch (error) {
+        console.error("Failed to start background services:", error);
+    }
 });
-startTaskShedulesServer();
+void startBackgroundServices();
 exports.default = app;

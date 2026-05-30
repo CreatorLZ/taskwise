@@ -1,7 +1,7 @@
+import "dotenv/config";
 import express, { Application, Request, Response } from "express";
 import cors from "cors";
 import helmet from "helmet";
-import { config } from "dotenv";
 import taskRoutes from "./routes/taskRoutes";
 import authRoutes from "./routes/authRoutes";
 import googleAuthRoutes from "./routes/googleAuthRoutes";
@@ -11,19 +11,11 @@ import taskAnalysis from "./routes/taskAnalysis";
 import insights from "./routes/insights";
 import connectDB from "./config/db";
 import userRoutes from "./routes/userRoutes";
-import "./cron/reminderCron";
-import "./cron/RecurrenceCron";
 import { taskAnalysisScheduler } from "./cron/TaskAnalysisScheduler";
 import { generalLimiter, aiLimiter } from "./middleware/rateLimiter";
 
-// Load environment variables
-config();
-
-// Connect to MongoDB
-connectDB();
-
 const app: Application = express();
-const port = process.env.PORT;
+const port = Number(process.env.PORT) || 5000;
 
 // Security: Helmet for security headers
 app.use(
@@ -89,14 +81,22 @@ app.get("/health", (req: Request, res: Response) => {
 });
 
 // Start the server
-app.listen(port, () => {
+const server = app.listen(port, "0.0.0.0", () => {
   console.log(`Server is running on port ${port}`);
 });
 
-const startTaskShedulesServer = async () => {
-  await taskAnalysisScheduler.restoreSchedules();
+const startBackgroundServices = async () => {
+  try {
+    await connectDB();
+    await import("./cron/reminderCron");
+    await import("./cron/RecurrenceCron");
+    await taskAnalysisScheduler.restoreSchedules();
+  } catch (error) {
+    console.error("Failed to start background services:", error);
+  }
 };
 
-startTaskShedulesServer();
+void startBackgroundServices();
 
 export default app;
+export { server };

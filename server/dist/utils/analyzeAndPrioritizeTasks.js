@@ -15,112 +15,178 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.analyzeAndPrioritizeTasks = void 0;
 const Task_1 = __importDefault(require("../models/Task"));
 const geminiService_1 = __importDefault(require("../services/geminiService"));
-const analyzeAndPrioritizeTasks = (userId) => __awaiter(void 0, void 0, void 0, function* () {
-    try {
-        if (!userId) {
-            throw new Error("userId is required but was not provided.");
-        }
-        const currentDate = new Date();
-        // Only analyze the first most recent uncompleted task for the user
-        const task = (yield Task_1.default.findOne({
-            userId,
-            completed: false,
-        })
-            .sort({ dueDate: 1, createdAt: 1 }) // soonest due, then oldest created
-            .exec());
-        if (!task) {
-            console.log(`No eligible tasks to analyze for user ${userId}.`);
-            return;
-        }
-        const { _id, title, description, priority, dueDate } = task;
-        console.log(`Analyzing task for user ${userId}: ${title}`);
-        // Prepare analysis prompt
-        const analysisInput = `Analyze this task and return only a JSON object with priority/status recommendations:
-Task: ${title}
-Description: ${description || "No description provided"}
-Current Priority: ${priority}
-Due Date: ${dueDate.toISOString()}
-Reference Date: ${currentDate.toISOString()}
+const calculateTimeProgress_1 = __importDefault(require("./calculateTimeProgress"));
+const aiJsonUtils_1 = require("./aiJsonUtils");
+const date_fns_1 = require("date-fns");
+const VALID_PRIORITIES = ["Low", "Medium", "High", "Completed"];
+const VALID_STATUSES = ["Pending", "In-progress", "Completed"];
+const isPriority = (value) => VALID_PRIORITIES.includes(value);
+const isStatus = (value) => VALID_STATUSES.includes(value);
+const taskId = (task) => String(task._id);
+const formatTaskForClient = (task) => {
+    var _a;
+    const createdAt = (_a = task.createdAt) !== null && _a !== void 0 ? _a : new Date();
+    return Object.assign(Object.assign({}, task.toObject()), { dueDate: task.dueDate.toISOString(), dueTime: (0, date_fns_1.formatDistanceToNow)(new Date(task.dueDate), {
+            addSuffix: true,
+        }), formattedDueDate: (0, date_fns_1.format)(new Date(task.dueDate), "MMM d, yyyy h:mm a"), startDate: (0, date_fns_1.format)(new Date(createdAt), "yyyy-MM-dd"), progress: (0, calculateTimeProgress_1.default)(createdAt.toISOString(), task.dueDate.toISOString()) });
+};
+const getFallbackRecommendation = (task, referenceDate) => {
+    if (task.completed || task.status === "Completed") {
+        return {
+            taskId: taskId(task),
+            newPriority: "Completed",
+            newStatus: "Completed",
+            reason: "Task is already completed.",
+        };
+    }
+    const msUntilDue = task.dueDate.getTime() - referenceDate.getTime();
+    const hoursUntilDue = msUntilDue / (1000 * 60 * 60);
+    if (hoursUntilDue < 0) {
+        return {
+            taskId: taskId(task),
+            newPriority: "High",
+            newStatus: "Pending",
+            reason: "Task is overdue.",
+        };
+    }
+    if (hoursUntilDue <= 24) {
+        return {
+            taskId: taskId(task),
+            newPriority: "High",
+            newStatus: task.status === "Completed" ? "Completed" : "In-progress",
+            reason: "Task is due within 24 hours.",
+        };
+    }
+    if (hoursUntilDue <= 72) {
+        return {
+            taskId: taskId(task),
+            newPriority: "Medium",
+            newStatus: task.status === "Completed" ? "Completed" : "Pending",
+            reason: "Task is due within the next three days.",
+        };
+    }
+    return {
+        taskId: taskId(task),
+        newPriority: "Low",
+        newStatus: task.status === "Completed" ? "Completed" : "Pending",
+        reason: "Task has enough lead time.",
+    };
+};
+const getAiRecommendations = (tasks, referenceDate) => __awaiter(void 0, void 0, void 0, function* () {
+    const prompt = `Return a JSON array only. No markdown. No prose.
 
-Required JSON format:
-{
-  "newPriority": "Low" | "Medium" | "High" | "Completed",
-  "newStatus": "Pending" | "In-progress" | "Completed",
-  "reason": "string explanation"
-}
+Reference date: ${referenceDate.toISOString()}
 
 Rules:
-- If due date < reference date, set priority="High" and status="Pending"
-- Explain any changes in the reason field
-- Return only the JSON object, no other text`;
-        // Gemini API call using centralized service
-        const output = yield geminiService_1.default.generateContent(analysisInput, {
-            maxOutputTokens: 500,
-            temperature: 0.6,
-            topP: 0.95,
+- Preserve Completed tasks as Completed.
+- Overdue tasks should usually be High priority and Pending unless completed.
+- Tasks due within 24 hours should usually be High priority.
+- Tasks due within 3 days should usually be Medium priority.
+- Use Low priority only when there is enough lead time and no urgency.
+- Return one recommendation per task.
+
+Each array item must use this shape:
+{
+  "taskId": "string",
+  "newPriority": "Low" | "Medium" | "High" | "Completed",
+  "newStatus": "Pending" | "In-progress" | "Completed",
+  "reason": "short practical reason"
+}
+
+Tasks:
+${JSON.stringify(tasks.map((task) => {
+        var _a;
+        return ({
+            taskId: taskId(task),
+            title: task.title,
+            priority: task.priority,
+            status: task.status,
+            completed: task.completed,
+            dueDate: task.dueDate.toISOString(),
+            createdAt: (_a = task.createdAt) === null || _a === void 0 ? void 0 : _a.toISOString(),
         });
-        console.log("Model response:", output);
-        // Extract JSON using regex
-        const jsonRegex = /\{[\s\S]*?\}/g;
-        const matches = output.match(jsonRegex);
-        if (!matches) {
-            console.error("No JSON found in response for task:", title);
-            return;
-        }
-        // Take the longest match as it's likely the complete JSON
-        const jsonStr = matches.reduce((a, b) => (a.length > b.length ? a : b));
-        let aiResponse;
-        try {
-            aiResponse = JSON.parse(jsonStr);
-        }
-        catch (parseError) {
-            console.error("Failed to parse JSON for task:", title);
-            console.error("JSON string:", jsonStr);
-            return;
-        }
-        // Validate response structure
-        if (!aiResponse.newPriority ||
-            !aiResponse.newStatus ||
-            typeof aiResponse.reason !== "string") {
-            console.error("Invalid AI response structure for task:", title);
-            return;
-        }
-        // Update task if needed
-        const newPriority = aiResponse.newPriority;
-        const newStatus = aiResponse.newStatus;
-        const reason = aiResponse.reason;
+    }), null, 2)}`;
+    const output = yield geminiService_1.default.generateContent(prompt, {
+        maxOutputTokens: 4096,
+        temperature: 0,
+        topP: 0.9,
+        responseMimeType: "application/json",
+        thinkingLevel: "low",
+    }, 15000);
+    const parsed = (0, aiJsonUtils_1.parseJsonArray)(output);
+    return parsed.filter((item) => typeof item.taskId === "string" &&
+        isPriority(item.newPriority) &&
+        isStatus(item.newStatus) &&
+        typeof item.reason === "string");
+});
+const applyRecommendations = (tasks, recommendations) => __awaiter(void 0, void 0, void 0, function* () {
+    const recommendationsByTaskId = new Map(recommendations.map((recommendation) => [
+        recommendation.taskId,
+        recommendation,
+    ]));
+    for (const task of tasks) {
+        const recommendation = recommendationsByTaskId.get(taskId(task));
+        if (!recommendation)
+            continue;
         let isUpdated = false;
-        if (newPriority !== priority) {
+        if (recommendation.newPriority !== task.priority) {
             task.priorityLogs.push({
-                oldPriority: priority,
-                newPriority,
-                reason,
+                oldPriority: task.priority,
+                newPriority: recommendation.newPriority,
+                reason: recommendation.reason,
                 timestamp: new Date(),
             });
-            task.priority = newPriority;
+            task.previousPriority = task.priority;
+            task.priority = recommendation.newPriority;
             isUpdated = true;
         }
-        if (newStatus !== task.status) {
-            task.status = newStatus;
+        if (recommendation.newStatus !== task.status) {
+            task.status = recommendation.newStatus;
             isUpdated = true;
+        }
+        if (recommendation.newStatus === "Completed") {
+            task.completed = true;
         }
         if (isUpdated) {
             task.retouchedByAI = true;
             yield task.save();
-            console.log(`Task "${title}" updated:`, {
-                priority: `${priority} → ${newPriority}`,
-                status: `${task.status} → ${newStatus}`,
-                reason,
-            });
         }
-        else {
-            console.log(`No changes needed for task "${title}"`);
+    }
+});
+const analyzeAndPrioritizeTasks = (userId) => __awaiter(void 0, void 0, void 0, function* () {
+    if (!userId) {
+        throw new Error("userId is required but was not provided.");
+    }
+    const referenceDate = new Date();
+    const tasks = yield Task_1.default.find({ userId, completed: false })
+        .sort({ dueDate: 1, createdAt: 1 })
+        .limit(10);
+    if (tasks.length === 0) {
+        return [];
+    }
+    let recommendations;
+    try {
+        recommendations = yield getAiRecommendations(tasks, referenceDate);
+        if (recommendations.length === 0) {
+            throw new Error("AI returned no valid task recommendations");
         }
-        console.log(`Task analysis complete for user ${userId}`);
     }
     catch (error) {
-        console.error("Error during task analysis:", error);
-        throw new Error("Failed to analyze and prioritize tasks");
+        if (error instanceof aiJsonUtils_1.AiJsonParseError) {
+            console.warn("[AI prioritization] Invalid JSON response from Gemini", {
+                message: error.message,
+                responsePreview: error.responsePreview,
+            });
+        }
+        console.warn("AI prioritization failed. Falling back to deterministic prioritization:", error.message);
+        recommendations = tasks.map((task) => getFallbackRecommendation(task, referenceDate));
     }
+    yield applyRecommendations(tasks, recommendations);
+    const updatedTasks = yield Task_1.default.find({ userId }).sort({
+        createdAt: -1,
+        priority: -1,
+        dueDate: 1,
+    });
+    return updatedTasks.map(formatTaskForClient);
 });
 exports.analyzeAndPrioritizeTasks = analyzeAndPrioritizeTasks;
