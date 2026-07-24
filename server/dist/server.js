@@ -34,9 +34,11 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
 var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
+var _a, _b;
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.server = void 0;
 require("dotenv/config");
+const v8_1 = __importDefault(require("v8"));
 const express_1 = __importDefault(require("express"));
 const cors_1 = __importDefault(require("cors"));
 const helmet_1 = __importDefault(require("helmet"));
@@ -53,6 +55,17 @@ const TaskAnalysisScheduler_1 = require("./cron/TaskAnalysisScheduler");
 const rateLimiter_1 = require("./middleware/rateLimiter");
 const app = (0, express_1.default)();
 const port = Number(process.env.PORT) || 5000;
+// Set safe heap limit for Render's 512MB free tier (Node 22.4+)
+try {
+    (_b = (_a = v8_1.default).setHeapSizeLimit) === null || _b === void 0 ? void 0 : _b.call(_a, 384 * 1024 * 1024);
+}
+catch (_c) {
+    // Fallback: rely on --max-old-space-size CLI flag
+}
+const mb = (bytes) => `${(bytes / 1024 / 1024).toFixed(1)} MB`;
+const heap = () => v8_1.default.getHeapStatistics();
+const logMem = (label) => console.log(`[mem] ${label}: heap=${mb(heap().used_heap_size)}/${mb(heap().heap_size_limit)} rss=${mb(process.memoryUsage().rss)}`);
+logMem("server start");
 // Security: Helmet for security headers
 app.use((0, helmet_1.default)({
     crossOriginEmbedderPolicy: false, // Allow embedding for OAuth popups
@@ -110,15 +123,40 @@ const server = app.listen(port, "0.0.0.0", () => {
 });
 exports.server = server;
 const startBackgroundServices = () => __awaiter(void 0, void 0, void 0, function* () {
+    logMem("before connectDB");
     try {
         yield (0, db_1.default)();
+    }
+    catch (error) {
+        console.error("Failed to connect to database:", error);
+        return;
+    }
+    logMem("after connectDB");
+    try {
         yield Promise.resolve().then(() => __importStar(require("./cron/reminderCron")));
+        console.log("[startup] reminderCron loaded");
+    }
+    catch (error) {
+        console.error("Failed to load reminderCron:", error);
+    }
+    logMem("after reminderCron");
+    try {
         yield Promise.resolve().then(() => __importStar(require("./cron/RecurrenceCron")));
+        console.log("[startup] RecurrenceCron loaded");
+    }
+    catch (error) {
+        console.error("Failed to load RecurrenceCron:", error);
+    }
+    logMem("after RecurrenceCron");
+    try {
         yield TaskAnalysisScheduler_1.taskAnalysisScheduler.restoreSchedules();
     }
     catch (error) {
-        console.error("Failed to start background services:", error);
+        console.error("Failed to restore task analysis schedules:", error);
     }
+    logMem("startup complete");
 });
 void startBackgroundServices();
+// Log memory every 30s for Render diagnostics
+setInterval(() => logMem("periodic"), 30000);
 exports.default = app;

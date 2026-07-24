@@ -254,4 +254,17 @@ class GeminiService {
   }
 }
 
-export default new GeminiService();
+let _instance: GeminiService | null = null;
+
+const getInstance = (): GeminiService => {
+  if (!_instance) _instance = new GeminiService();
+  return _instance;
+};
+
+export default new Proxy({} as GeminiService, {
+  get(_, prop) {
+    const instance = getInstance();
+    const value = (instance as any)[prop];
+    return typeof value === "function" ? value.bind(instance) : value;
+  },
+});

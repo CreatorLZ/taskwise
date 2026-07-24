@@ -189,4 +189,16 @@ class GeminiService {
         });
     }
 }
-exports.default = new GeminiService();
+let _instance = null;
+const getInstance = () => {
+    if (!_instance)
+        _instance = new GeminiService();
+    return _instance;
+};
+exports.default = new Proxy({}, {
+    get(_, prop) {
+        const instance = getInstance();
+        const value = instance[prop];
+        return typeof value === "function" ? value.bind(instance) : value;
+    },
+});

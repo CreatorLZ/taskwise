@@ -13,10 +13,16 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 };
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.googleCallback = exports.googleLogin = void 0;
-const google_auth_library_1 = require("google-auth-library");
 const User_1 = __importDefault(require("../models/User"));
 const jwt_1 = require("../utils/jwt");
-const client = new google_auth_library_1.OAuth2Client(process.env.GOOGLE_CLIENT_ID);
+let _client;
+const getClient = () => {
+    if (!_client) {
+        const { OAuth2Client } = require("google-auth-library");
+        _client = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
+    }
+    return _client;
+};
 // Handle Google login
 const googleLogin = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     try {

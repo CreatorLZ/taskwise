@@ -1,9 +1,16 @@
 import { Request, Response } from "express";
-import { OAuth2Client } from "google-auth-library";
+import type { OAuth2Client } from "google-auth-library";
 import User from "../models/User";
 import { generateToken } from "../utils/jwt";
 
-const client = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
+let _client: OAuth2Client;
+const getClient = (): OAuth2Client => {
+  if (!_client) {
+    const { OAuth2Client } = require("google-auth-library");
+    _client = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
+  }
+  return _client;
+};
 
 // Handle Google login
 export const googleLogin = async (
