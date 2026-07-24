@@ -1,29 +1,33 @@
-import { initializeApp, cert } from "firebase-admin/app";
-import { getMessaging } from "firebase-admin/messaging";
-import { ServiceAccount } from "firebase-admin";
-import * as admin from "firebase-admin";
+import type { ServiceAccount } from "firebase-admin";
+import type { Messaging } from "firebase-admin/messaging";
 
-// Initialize Firebase Admin
-const serviceAccount = {
-  type: process.env.FIREBASE_TYPE,
-  project_id: process.env.FIREBASE_PROJECT_ID,
-  private_key_id: process.env.FIREBASE_PRIVATE_KEY_ID,
-  private_key: process.env.FIREBASE_PRIVATE_KEY?.replace(/\\n/g, "\n"),
-  client_email: process.env.FIREBASE_CLIENT_EMAIL,
-  client_id: process.env.FIREBASE_CLIENT_ID,
-  auth_uri: process.env.FIREBASE_AUTH_URI,
-  token_uri: process.env.FIREBASE_TOKEN_URI,
-  auth_provider_x509_cert_url: process.env.FIREBASE_AUTH_PROVIDER_X509_CERT_URL,
-  client_x509_cert_url: process.env.FIREBASE_CLIENT_X509_CERT_URL,
-} as ServiceAccount;
+let messaging: Messaging | null = null;
 
-// Initialize the app
-admin.initializeApp({
-  credential: admin.credential.cert(serviceAccount),
-});
+const getMessagingInstance = (): Messaging => {
+  if (messaging) return messaging;
 
-// Get messaging instance
-const messaging = admin.messaging();
+  const admin = require("firebase-admin");
+
+  const serviceAccount = {
+    type: process.env.FIREBASE_TYPE,
+    project_id: process.env.FIREBASE_PROJECT_ID,
+    private_key_id: process.env.FIREBASE_PRIVATE_KEY_ID,
+    private_key: process.env.FIREBASE_PRIVATE_KEY?.replace(/\\n/g, "\n"),
+    client_email: process.env.FIREBASE_CLIENT_EMAIL,
+    client_id: process.env.FIREBASE_CLIENT_ID,
+    auth_uri: process.env.FIREBASE_AUTH_URI,
+    token_uri: process.env.FIREBASE_TOKEN_URI,
+    auth_provider_x509_cert_url: process.env.FIREBASE_AUTH_PROVIDER_X509_CERT_URL,
+    client_x509_cert_url: process.env.FIREBASE_CLIENT_X509_CERT_URL,
+  } as ServiceAccount;
+
+  admin.initializeApp({
+    credential: admin.credential.cert(serviceAccount),
+  });
+
+  messaging = admin.messaging() as Messaging;
+  return messaging;
+};
 
 // Function to send push notification
 export const sendPushNotification = async (
@@ -81,7 +85,7 @@ export const sendPushNotification = async (
       },
     };
 
-    const response = await messaging.send(message);
+    const response = await getMessagingInstance().send(message);
     console.log("Successfully sent notification:", response);
     return response;
   } catch (error) {
