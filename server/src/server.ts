@@ -17,6 +17,9 @@ import { generalLimiter, aiLimiter } from "./middleware/rateLimiter";
 const app: Application = express();
 const port = Number(process.env.PORT) || 5000;
 
+// Log startup info for debugging Render deploys
+console.log(`[startup] PORT env=${process.env.PORT}, resolved port=${port}`);
+
 // Security: Helmet for security headers
 app.use(
   helmet({
@@ -88,11 +91,30 @@ const server = app.listen(port, "0.0.0.0", () => {
 const startBackgroundServices = async () => {
   try {
     await connectDB();
+  } catch (error) {
+    console.error("Failed to connect to database:", error);
+    return;
+  }
+
+  // Load cron jobs in parallel but catch each separately to isolate failures
+  try {
     await import("./cron/reminderCron");
+    console.log("[startup] reminderCron loaded");
+  } catch (error) {
+    console.error("Failed to load reminderCron:", error);
+  }
+
+  try {
     await import("./cron/RecurrenceCron");
+    console.log("[startup] RecurrenceCron loaded");
+  } catch (error) {
+    console.error("Failed to load RecurrenceCron:", error);
+  }
+
+  try {
     await taskAnalysisScheduler.restoreSchedules();
   } catch (error) {
-    console.error("Failed to start background services:", error);
+    console.error("Failed to restore task analysis schedules:", error);
   }
 };
 

@@ -29,14 +29,16 @@ const recurrenceCron = cron.schedule(
   }
 );
 
-// Also run once on server startup after a delay
-setTimeout(async () => {
+// Run once on server startup after a delay to avoid memory spikes during init
+const INITIAL_DELAY_MS = 120_000; // 2 minutes — give server time to settle
+let startupTimer: ReturnType<typeof setTimeout> | null = setTimeout(async () => {
+  startupTimer = null;
   console.log("[RecurrenceCron] Running initial recurrence check...");
   try {
     await recurrenceService.processRecurringTasks();
   } catch (error) {
     console.error("[RecurrenceCron] Initial run error:", error);
   }
-}, 30000); // 30 seconds after startup
+}, INITIAL_DELAY_MS);
 
 export default recurrenceCron;

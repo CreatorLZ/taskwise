@@ -53,6 +53,8 @@ const TaskAnalysisScheduler_1 = require("./cron/TaskAnalysisScheduler");
 const rateLimiter_1 = require("./middleware/rateLimiter");
 const app = (0, express_1.default)();
 const port = Number(process.env.PORT) || 5000;
+// Log startup info for debugging Render deploys
+console.log(`[startup] PORT env=${process.env.PORT}, resolved port=${port}`);
 // Security: Helmet for security headers
 app.use((0, helmet_1.default)({
     crossOriginEmbedderPolicy: false, // Allow embedding for OAuth popups
@@ -112,12 +114,31 @@ exports.server = server;
 const startBackgroundServices = () => __awaiter(void 0, void 0, void 0, function* () {
     try {
         yield (0, db_1.default)();
+    }
+    catch (error) {
+        console.error("Failed to connect to database:", error);
+        return;
+    }
+    // Load cron jobs in parallel but catch each separately to isolate failures
+    try {
         yield Promise.resolve().then(() => __importStar(require("./cron/reminderCron")));
+        console.log("[startup] reminderCron loaded");
+    }
+    catch (error) {
+        console.error("Failed to load reminderCron:", error);
+    }
+    try {
         yield Promise.resolve().then(() => __importStar(require("./cron/RecurrenceCron")));
+        console.log("[startup] RecurrenceCron loaded");
+    }
+    catch (error) {
+        console.error("Failed to load RecurrenceCron:", error);
+    }
+    try {
         yield TaskAnalysisScheduler_1.taskAnalysisScheduler.restoreSchedules();
     }
     catch (error) {
-        console.error("Failed to start background services:", error);
+        console.error("Failed to restore task analysis schedules:", error);
     }
 });
 void startBackgroundServices();
