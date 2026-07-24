@@ -3,7 +3,7 @@
 // Uses centralized Gemini service for caching, rate limiting, and monitoring.
 
 import Task, { ITask } from "../models/Task";
-import geminiService from "../services/geminiService";
+import { getGeminiService } from "../services/geminiService";
 import { AiJsonParseError, parseJsonObject } from "./aiJsonUtils";
 
 const VALID_PRIORITIES = ["Low", "Medium", "High"] as const;
@@ -59,7 +59,7 @@ TIME HANDLING RULES:
 
   try {
     // Gemini API call with timeout using centralized service
-    const output = await geminiService.generateContent(
+    const output = await getGeminiService().generateContent(
       prompt,
       {
         maxOutputTokens: 1500, // Increased further to prevent any truncation

@@ -254,4 +254,9 @@ class GeminiService {
   }
 }
 
-export default new GeminiService();
+let _instance: GeminiService | null = null;
+
+export function getGeminiService(): GeminiService {
+  if (!_instance) _instance = new GeminiService();
+  return _instance;
+}

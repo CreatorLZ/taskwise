@@ -1,14 +1,16 @@
 import type { ServiceAccount } from "firebase-admin";
 import type { Messaging } from "firebase-admin/messaging";
 
-let messaging: Messaging | null = null;
+let _messaging: Messaging | null = null;
 
-const getMessagingInstance = (): Messaging => {
-  if (messaging) return messaging;
+async function getMessagingInstance(): Promise<Messaging> {
+  if (_messaging) return _messaging;
 
-  const admin = require("firebase-admin");
+  const { initializeApp, cert } = await import("firebase-admin/app");
+  const { getMessaging } = await import("firebase-admin/messaging");
+  const admin = await import("firebase-admin");
 
-  const serviceAccount = {
+  const serviceAccount: Record<string, unknown> = {
     type: process.env.FIREBASE_TYPE,
     project_id: process.env.FIREBASE_PROJECT_ID,
     private_key_id: process.env.FIREBASE_PRIVATE_KEY_ID,
@@ -19,15 +21,15 @@ const getMessagingInstance = (): Messaging => {
     token_uri: process.env.FIREBASE_TOKEN_URI,
     auth_provider_x509_cert_url: process.env.FIREBASE_AUTH_PROVIDER_X509_CERT_URL,
     client_x509_cert_url: process.env.FIREBASE_CLIENT_X509_CERT_URL,
-  } as ServiceAccount;
+  };
 
   admin.initializeApp({
     credential: admin.credential.cert(serviceAccount),
   });
 
-  messaging = admin.messaging() as Messaging;
-  return messaging;
-};
+  _messaging = admin.messaging();
+  return _messaging;
+}
 
 // Function to send push notification
 export const sendPushNotification = async (
@@ -85,7 +87,7 @@ export const sendPushNotification = async (
       },
     };
 
-    const response = await getMessagingInstance().send(message);
+    const response = await (await getMessagingInstance()).send(message);
     console.log("Successfully sent notification:", response);
     return response;
   } catch (error) {

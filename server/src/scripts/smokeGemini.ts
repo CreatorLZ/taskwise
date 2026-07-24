@@ -1,8 +1,8 @@
 import "dotenv/config";
-import geminiService from "../services/geminiService";
+import { getGeminiService } from "../services/geminiService";
 
 async function main() {
-  const objectResponse = await geminiService.generateContent(
+  const objectResponse = await getGeminiService().generateContent(
     'Return only this JSON object: {"ok": true}',
     {
       maxOutputTokens: 256,
@@ -16,7 +16,7 @@ async function main() {
   console.log("Object response:");
   console.log(objectResponse);
 
-  const arrayResponse = await geminiService.generateContent(
+  const arrayResponse = await getGeminiService().generateContent(
     `Return only a JSON array with one recommendation:
 [
   {
@@ -38,7 +38,7 @@ async function main() {
   console.log("Array response:");
   console.log(arrayResponse);
 
-  const taskResponse = await geminiService.generateContent(
+  const taskResponse = await getGeminiService().generateContent(
     `Convert this command into a JSON task object. Return JSON only.
 
 Command: create a task to submit the product report tomorrow at 5pm

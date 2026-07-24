@@ -1,5 +1,5 @@
 import Task, { ITask } from "../models/Task";
-import geminiService from "../services/geminiService";
+import { getGeminiService } from "../services/geminiService";
 import calculateTimeProgress from "./calculateTimeProgress";
 import { AiJsonParseError, parseJsonArray } from "./aiJsonUtils";
 import { format, formatDistanceToNow } from "date-fns";
@@ -133,7 +133,7 @@ ${JSON.stringify(
   2
 )}`;
 
-  const output = await geminiService.generateContent(
+  const output = await getGeminiService().generateContent(
     prompt,
     {
       maxOutputTokens: 4096,

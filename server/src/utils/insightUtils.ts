@@ -1,4 +1,4 @@
-import geminiService from "../services/geminiService";
+import { getGeminiService } from "../services/geminiService";
 import Task from "../models/Task";
 
 export async function generateProductivityInsights(userId: string) {
@@ -24,7 +24,7 @@ Tasks: ${JSON.stringify(
   )}
 `;
 
-  const response = await geminiService.generateContent(prompt, {
+  const response = await getGeminiService().generateContent(prompt, {
     maxOutputTokens: 300,
     temperature: 0.7,
     topP: 0.95,
