@@ -1,7 +1,7 @@
 import { Types } from "mongoose";
 import Task from "../models/Task";
 import User from "../models/User";
-import geminiService from "../services/geminiService";
+import { getGeminiService } from "../services/geminiService";
 import { AiJsonParseError, parseJsonObject } from "./aiJsonUtils";
 
 interface TaskInsightInput {
@@ -183,7 +183,7 @@ Metrics: ${JSON.stringify(habitMetrics)}
 Recent tasks: ${JSON.stringify(insightTasks.slice(0, 10))}`;
 
   try {
-    const response = await geminiService.generateContent(
+    const response = await getGeminiService().generateContent(
       prompt,
       {
         maxOutputTokens: 2048,

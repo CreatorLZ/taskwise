@@ -1,4 +1,5 @@
 import "dotenv/config";
+import v8 from "v8";
 import express, { Application, Request, Response } from "express";
 import cors from "cors";
 import helmet from "helmet";
@@ -17,8 +18,14 @@ import { generalLimiter, aiLimiter } from "./middleware/rateLimiter";
 const app: Application = express();
 const port = Number(process.env.PORT) || 5000;
 
-// Log startup info for debugging Render deploys
-console.log(`[startup] PORT env=${process.env.PORT}, resolved port=${port}`);
+const mb = (bytes: number) => `${(bytes / 1024 / 1024).toFixed(1)} MB`;
+const heapStats = () => v8.getHeapStatistics();
+const logMemory = (label: string) =>
+  console.log(
+    `[memory] ${label} heap=${mb(heapStats().used_heap_size)}/${mb(heapStats().heap_size_limit)} rss=${mb(process.memoryUsage().rss)}`
+  );
+
+logMemory("imports loaded");
 
 // Security: Helmet for security headers
 app.use(
@@ -89,20 +96,22 @@ const server = app.listen(port, "0.0.0.0", () => {
 });
 
 const startBackgroundServices = async () => {
+  logMemory("before connectDB");
   try {
     await connectDB();
+    logMemory("after connectDB");
   } catch (error) {
     console.error("Failed to connect to database:", error);
     return;
   }
 
-  // Load cron jobs in parallel but catch each separately to isolate failures
   try {
     await import("./cron/reminderCron");
     console.log("[startup] reminderCron loaded");
   } catch (error) {
     console.error("Failed to load reminderCron:", error);
   }
+  logMemory("after reminderCron");
 
   try {
     await import("./cron/RecurrenceCron");
@@ -110,12 +119,15 @@ const startBackgroundServices = async () => {
   } catch (error) {
     console.error("Failed to load RecurrenceCron:", error);
   }
+  logMemory("after RecurrenceCron");
 
   try {
     await taskAnalysisScheduler.restoreSchedules();
   } catch (error) {
     console.error("Failed to restore task analysis schedules:", error);
   }
+
+  logMemory("startup complete");
 };
 
 void startBackgroundServices();

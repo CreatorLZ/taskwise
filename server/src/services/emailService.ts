@@ -4,24 +4,34 @@
  * https://resend.com
  */
 
-import { Resend } from "resend";
+import type { Resend } from "resend";
 
 class EmailService {
-  private resend: Resend | null = null;
+  private _resend: Resend | null = null;
+  private _initPromise: Promise<void> | null = null;
   private fromEmail: string;
 
   constructor() {
-    const apiKey = process.env.RESEND_API_KEY;
-    if (apiKey) {
-      this.resend = new Resend(apiKey);
-    } else {
-      console.warn(
-        "[EmailService] RESEND_API_KEY not set - emails will be logged only"
-      );
-    }
-    // Use Resend's default domain for testing, or your verified domain
     this.fromEmail =
       process.env.EMAIL_FROM || "TaskWise <onboarding@resend.dev>";
+  }
+
+  private async ensureInitialized(): Promise<void> {
+    if (this._initPromise) return this._initPromise;
+    this._initPromise = this._init();
+    return this._initPromise;
+  }
+
+  private async _init(): Promise<void> {
+    const apiKey = process.env.RESEND_API_KEY;
+    if (!apiKey) {
+      console.log(
+        "[EmailService] RESEND_API_KEY not set - emails will be logged only"
+      );
+      return;
+    }
+    const { Resend: ResendClient } = await import("resend");
+    this._resend = new ResendClient(apiKey);
   }
 
   /**
@@ -190,8 +200,10 @@ class EmailService {
     subject: string,
     html: string
   ): Promise<boolean> {
+    await this.ensureInitialized();
+
     // If Resend not configured, log the email
-    if (!this.resend) {
+    if (!this._resend) {
       console.log(`[EmailService] Would send email to ${to}:`);
       console.log(`  Subject: ${subject}`);
       console.log(`  (Email service not configured - set RESEND_API_KEY)`);
@@ -199,7 +211,7 @@ class EmailService {
     }
 
     try {
-      const { data, error } = await this.resend.emails.send({
+      const { data, error } = await this._resend.emails.send({
         from: this.fromEmail,
         to: [to],
         subject,
