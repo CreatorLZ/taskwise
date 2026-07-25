@@ -20,6 +20,9 @@ yarn-debug.log*
 yarn-error.log*
 pnpm-debug.log*
 
+# Local documentation (not committed)
+docs/
+
 # Local editor and OS files
 .DS_Store
 Thumbs.db

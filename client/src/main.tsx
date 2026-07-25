@@ -86,7 +86,14 @@ const queryClient = new QueryClient();
 
 createRoot(document.getElementById("root")!).render(
   <StrictMode>
-    <GoogleOAuthProvider clientId={import.meta.env.VITE_GOOGLE_CLIENT_ID}>
+    <GoogleOAuthProvider
+      clientId={import.meta.env.VITE_GOOGLE_CLIENT_ID}
+      onScriptLoadError={() =>
+        console.warn(
+          "Google Identity Services script failed to load. Ad blocker or network issue may be blocking it."
+        )
+      }
+    >
       <ThemeProvider>
         <HelmetProvider>
           <QueryClientProvider client={queryClient}>
